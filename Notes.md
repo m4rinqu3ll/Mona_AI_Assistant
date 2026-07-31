@@ -48,10 +48,14 @@ flowchart LR
 - [x] Configured Microsoft Graph delegated permissions: `User.Read`, `Mail.ReadWrite`, and `Mail.Send`.
 - [x] Added the application/client ID to the local `.env` file and kept `MS_TENANT_ID=common`.
 - [x] Selected DeepSeek as Mona's active LLM provider in `.env`.
+- [x] Started Mona locally and verified `/health` reports both Microsoft authentication and the LLM as configured.
+- [x] Completed the Microsoft browser sign-in and consent step for Mona's device-code flow.
+- [x] Resolved the HTTP 500 caused by Windows Credential Manager rejecting the oversized MSAL cache (`WinError 1783`). Mona now stores the cache as safe-sized, versioned chunks in the same OS vault.
+- [ ] Start and complete a fresh device-code flow using the fixed token storage.
 - [ ] Authenticate through Microsoft's device-code flow.
 - [ ] Start Mona and test the first read-only email chat.
 - [ ] Test an email draft/send action with explicit approval.
 
 ## Current next step
 
-Start Mona from the repository with `.\.venv\Scripts\python.exe -m uvicorn agent.app:app --reload`, keep the terminal open, and open `http://127.0.0.1:8000/docs`.
+Start a fresh flow with `POST /auth/device-code`, complete the Microsoft browser sign-in, and then immediately call `POST /auth/device-code/{new_flow_id}/complete`. The old flow ID was consumed by the failed attempt and cannot be reused.

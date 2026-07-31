@@ -15,7 +15,11 @@ def test_csv_scopes_load_from_environment(monkeypatch: pytest.MonkeyPatch) -> No
 
 
 def test_deepseek_configuration_requires_key() -> None:
-    missing = Settings(llm_provider="deepseek")
-    configured = Settings(llm_provider="deepseek", deepseek_api_key="test-key")
+    missing = Settings(llm_provider="deepseek", _env_file=None)
+    configured = Settings(
+        llm_provider="deepseek",
+        deepseek_api_key="test-key",
+        _env_file=None,
+    )
     assert missing.llm_configured is False
     assert configured.llm_configured is True

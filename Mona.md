@@ -117,9 +117,14 @@ Never read, print, copy into documentation, or commit the user's real `.env` val
 - Microsoft Graph delegated permissions `User.Read`, `Mail.ReadWrite`, and `Mail.Send` are configured.
 - Mona's Application (client) ID is configured locally in `.env`, and `MS_TENANT_ID=common` is set.
 - The DeepSeek API key is present locally and `LLM_PROVIDER=deepseek` is configured.
+- Mona is running locally, and `/health` returned `status: ok`, `microsoft_auth_configured: true`, and `llm_configured: true`.
+- The user completed the Microsoft browser sign-in and consent screen for a pending device-code flow.
+- The first device-code completion returned HTTP 500 because Windows Credential Manager rejected the oversized single-entry MSAL cache with `WinError 1783`.
+- The token store now base64-encodes the MSAL cache and saves it as safe-sized, versioned chunks in the same Windows credential vault. It writes the manifest last, cleans up replaced generations, and supports the original single-entry format.
+- Verification after the fix: 16 tests passed, Ruff passed, strict mypy passed, and the reloaded server health check passed.
 - The earlier Microsoft error occurred before the Azure account/tenant setup was complete.
-- **Next action:** Start Mona locally with `.\.venv\Scripts\python.exe -m uvicorn agent.app:app --reload`, leave that terminal running, and open `http://127.0.0.1:8000/docs`.
-- After that: authenticate through device code and run the first read-only email test.
+- **Next action:** Start a fresh `POST /auth/device-code` flow, finish browser sign-in, and immediately complete it through `POST /auth/device-code/{new_flow_id}/complete`. The previous flow ID was consumed and must not be reused.
+- After that: verify DeepSeek chat without tools, then run the first read-only email test.
 
 ## Development commands
 
