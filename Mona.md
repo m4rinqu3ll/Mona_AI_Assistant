@@ -48,6 +48,13 @@ Design boundaries:
 - Mutating email actions require explicit approval by default.
 - Graph responses and tool outputs should be bounded to the requested data.
 
+Approval trust boundary:
+
+- The LLM may propose a structured tool call, but it cannot approve or directly execute a mutating action.
+- The dispatcher returns `PENDING_APPROVAL` with the proposed parameters for user review.
+- In the current Phase 1 API, the exact reviewed call is manually resubmitted to `/tool` with `approval_status=APPROVED`.
+- The production design should persist an immutable pending action server-side, return an approval ID to the UI, and execute that stored action only when the trusted UI submits the approval ID. Approval should not be passed back through the LLM, because the model could regenerate or alter parameters.
+
 ## Implemented components
 
 - MSAL device-code authentication with token cache stored through the OS credential vault.
@@ -122,9 +129,16 @@ Never read, print, copy into documentation, or commit the user's real `.env` val
 - The first device-code completion returned HTTP 500 because Windows Credential Manager rejected the oversized single-entry MSAL cache with `WinError 1783`.
 - The token store now base64-encodes the MSAL cache and saves it as safe-sized, versioned chunks in the same Windows credential vault. It writes the manifest last, cleans up replaced generations, and supports the original single-entry format.
 - Verification after the fix: 16 tests passed, Ruff passed, strict mypy passed, and the reloaded server health check passed.
+- A fresh device-code flow completed successfully and returned `"authenticated": true`; Microsoft authentication and secure token persistence are now working.
 - The earlier Microsoft error occurred before the Azure account/tenant setup was complete.
-- **Next action:** Start a fresh `POST /auth/device-code` flow, finish browser sign-in, and immediately complete it through `POST /auth/device-code/{new_flow_id}/complete`. The previous flow ID was consumed and must not be reused.
-- After that: verify DeepSeek chat without tools, then run the first read-only email test.
+- Setup resumed after the intentional pause, and the live `/health` check still passes.
+- DeepSeek chat was verified through `POST /chat`: Mona returned `Mona is online.` and `tool_results` was empty.
+- The first read-only Outlook chat succeeded: Mona retrieved and summarized up to three unread messages without modifying the mailbox.
+- **Current milestone:** Mona's local DeepSeek-to-Outlook read-only workflow is operational end to end.
+- The first outbound email tool call was prepared and validated locally. `AUTO_APPROVE_TOOLS=false`, the dispatcher returned `PENDING_APPROVAL`, and nothing was sent. Private recipient and message details are intentionally not stored in this handoff file.
+- The user then gave explicit final approval. The exact verified call was submitted once with `approval_status=APPROVED`; Mona returned `success: true` and Microsoft Graph returned `sent: true`. Private recipient and message details remain excluded from this handoff file.
+- **Current milestone:** Mona's local DeepSeek-to-Outlook workflow is operational for both read-only email chat and approval-controlled sending.
+- **Next action:** No required first-run step remains. Preserve explicit approval for every future mutating email action and choose the next feature with the user.
 
 ## Development commands
 

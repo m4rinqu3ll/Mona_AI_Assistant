@@ -37,6 +37,15 @@ flowchart LR
 - Secrets belong only in the local `.env` file or the operating-system credential vault.
 - Never commit `.env`, API keys, access tokens, refresh tokens, passwords, or credential files to Git.
 
+## LLM and approval responsibilities
+
+- The **LLM prepares a proposal** by converting natural language into a structured tool call: action, recipient, subject, and body.
+- The **dispatcher validates and blocks** mutating proposals with `PENDING_APPROVAL`.
+- The **user approves through Mona's trusted UI/API**, not by giving authority to the LLM.
+- After approval, the backend executes the exact reviewed parameters through the tool and Microsoft Graph. The LLM must not rewrite the approved action.
+- Phase 1 manually resubmits the reviewed tool call with `approval_status=APPROVED`.
+- A future UI should store an immutable pending action server-side, display its preview, and send only an approval ID when the user clicks **Approve**.
+
 ## Setup progress
 
 - [x] Outlook account available.
@@ -51,11 +60,13 @@ flowchart LR
 - [x] Started Mona locally and verified `/health` reports both Microsoft authentication and the LLM as configured.
 - [x] Completed the Microsoft browser sign-in and consent step for Mona's device-code flow.
 - [x] Resolved the HTTP 500 caused by Windows Credential Manager rejecting the oversized MSAL cache (`WinError 1783`). Mona now stores the cache as safe-sized, versioned chunks in the same OS vault.
-- [ ] Start and complete a fresh device-code flow using the fixed token storage.
-- [ ] Authenticate through Microsoft's device-code flow.
-- [ ] Start Mona and test the first read-only email chat.
-- [ ] Test an email draft/send action with explicit approval.
+- [x] Started and completed a fresh device-code flow; Mona returned `"authenticated": true` and securely stored the Microsoft token cache.
+- [x] Verified DeepSeek through `POST /chat`; Mona returned `Mona is online.` with no tool results.
+- [x] Authenticated through Microsoft's device-code flow and persisted the token securely.
+- [x] Started Mona and completed the first read-only email chat with summaries of up to three unread messages.
+- [x] Prepared the first outbound email action and verified the approval gate returned `PENDING_APPROVAL`; nothing was sent.
+- [x] Sent the first outbound email through Microsoft Graph after explicit final approval.
 
 ## Current next step
 
-Start a fresh flow with `POST /auth/device-code`, complete the Microsoft browser sign-in, and then immediately call `POST /auth/device-code/{new_flow_id}/complete`. The old flow ID was consumed by the failed attempt and cannot be reused.
+The first approval-controlled outbound email succeeded. The dispatcher returned `APPROVED`, and Microsoft Graph confirmed `sent: true`. Private recipient and message details are intentionally not stored here.
