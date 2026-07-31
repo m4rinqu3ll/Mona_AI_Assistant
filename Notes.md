@@ -12,6 +12,7 @@
 - **Mona** — The local personal AI-assistant application.
 - **FastAPI** — Exposes Mona's local authentication, chat, and tool endpoints.
 - **DeepSeek API** — Interprets the user's request and decides which approved Mona tool to use.
+- **Mona mobile PWA** — A phone-friendly private interface for chat and approvals; the first local shell is implemented, but remote access is not enabled yet.
 
 ## Connection map
 
@@ -66,7 +67,11 @@ flowchart LR
 - [x] Started Mona and completed the first read-only email chat with summaries of up to three unread messages.
 - [x] Prepared the first outbound email action and verified the approval gate returned `PENDING_APPROVAL`; nothing was sent.
 - [x] Sent the first outbound email through Microsoft Graph after explicit final approval.
+- [x] Built the first mobile PWA shell and connected its readiness screen to Mona's local backend through a safe server-side health route.
+- [x] Verified the mobile shell with a production build, lint check, and rendered-page test.
+- [x] Fixed the Windows local-preview failure that loaded HTML without styling. Mona's local launcher now serves its built CSS and JavaScript directly, with an automated asset test.
+- [x] Visually confirmed the corrected Mona home screen: Mona is online and all three readiness checks show `Ready`.
 
 ## Current next step
 
-The first approval-controlled outbound email succeeded. The dispatcher returned `APPROVED`, and Microsoft Graph confirmed `sent: true`. Private recipient and message details are intentionally not stored here.
+Add secure private phone access. Do not enable chat or mobile approvals before authentication and immutable pending approvals exist.

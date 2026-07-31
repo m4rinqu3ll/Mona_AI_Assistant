@@ -6,7 +6,7 @@ This is the concise handoff document for Mona. Read this file, `README.md`, and 
 
 - **Name:** Mona
 - **Purpose:** An extensible, tool-based personal AI assistant.
-- **Current phase:** Local Phase 1 implementation and first Outlook email-chat setup.
+- **Current phase:** Private mobile companion implementation, building on the verified local Outlook workflow.
 - **Repository:** `C:\Users\kummaris.S-TKP-LTP-0343\OneDrive\M4rinqu3ll_GitHub_Repos\Mona_AI_Assistant`
 - **Primary language/runtime:** Python 3.12+
 - **API framework:** FastAPI
@@ -26,7 +26,9 @@ This is the concise handoff document for Mona. Read this file, `README.md`, and 
 
 ```mermaid
 flowchart LR
-    User["User or frontend"] --> API["FastAPI"]
+    User["User"] --> Mobile["Mona mobile PWA"]
+    Mobile --> WebAPI["Server-side web routes"]
+    WebAPI --> API["FastAPI"]
     API --> Chat["ChatService"]
     Chat --> LLM["DeepSeek LLMProvider"]
     LLM --> Dispatcher["ToolDispatcher"]
@@ -65,6 +67,7 @@ Approval trust boundary:
 - Provider-neutral `LLMProvider` with DeepSeek and OpenAI implementations.
 - Provider-neutral memory interface; durable long-term memory is not implemented yet.
 - Structured logging and an automated test suite.
+- A mobile-first PWA shell in `web/`, with a server-side health proxy that exposes only non-sensitive readiness state. Chat and approvals remain locked until app authentication and durable approvals are implemented.
 
 ## Important files
 
@@ -84,6 +87,8 @@ Approval trust boundary:
 - `agent/tools/email/tool.py` — Outlook email tool.
 - `agent/llm/deepseek_provider.py` — DeepSeek integration.
 - `.env.example` — Safe configuration template; contains no real secrets.
+- `web/` — Mona's mobile-first web application and server-side bridge to the FastAPI backend.
+- `web/app/api/mona-health/route.ts` — Safe server-side health proxy; the browser does not receive backend credentials.
 
 ## Local configuration
 
@@ -113,7 +118,7 @@ Never read, print, copy into documentation, or commit the user's real `.env` val
 - **Required delegated permissions:** `User.Read`, `Mail.ReadWrite`, and `Mail.Send`.
 - **Public client:** Enable public client flows; do not create or use a client secret for this local device-code application.
 
-## Current setup status — 2026-07-31
+## Current setup status — 2026-08-01
 
 - The user has a personal Outlook account.
 - The user has a DeepSeek API key configured locally.
@@ -138,7 +143,11 @@ Never read, print, copy into documentation, or commit the user's real `.env` val
 - The first outbound email tool call was prepared and validated locally. `AUTO_APPROVE_TOOLS=false`, the dispatcher returned `PENDING_APPROVAL`, and nothing was sent. Private recipient and message details are intentionally not stored in this handoff file.
 - The user then gave explicit final approval. The exact verified call was submitted once with `approval_status=APPROVED`; Mona returned `success: true` and Microsoft Graph returned `sent: true`. Private recipient and message details remain excluded from this handoff file.
 - **Current milestone:** Mona's local DeepSeek-to-Outlook workflow is operational for both read-only email chat and approval-controlled sending.
-- **Next action:** No required first-run step remains. Preserve explicit approval for every future mutating email action and choose the next feature with the user.
+- The private mobile-companion direction is now active. Step 1 added a mobile-first PWA shell under `web/` and connected its readiness screen to Mona's local `/health` endpoint through a same-origin server route.
+- The PWA production build, ESLint check, and rendered HTML test pass. It is intentionally local-only: chat and approvals are disabled until secure app authentication and durable immutable pending actions are implemented.
+- The first browser check exposed a Windows-only vinext local-server issue: HTML loaded while hashed CSS and JavaScript returned 404. `web/scripts/start-local.mjs` now safely serves built assets and delegates application requests to the compiled worker. An integration test verifies every CSS and JavaScript URL returns HTTP 200, and the live readiness proxy reports Mona, Microsoft, and the LLM configured.
+- The user visually confirmed the corrected mobile home screen: styling loads, Mona reports online, and the backend, DeepSeek, and Outlook connection rows all show `Ready`.
+- **Next action:** Implement secure private phone access before exposing chat or approval controls.
 
 ## Development commands
 
@@ -159,6 +168,7 @@ Interactive API documentation is available locally at `http://127.0.0.1:8000/doc
 - Do not add a Microsoft client secret to the device-code flow.
 - Do not enable `AUTO_APPROVE_TOOLS=true` unless the user explicitly accepts the risk in a trusted local environment.
 - Keep Mona bound to localhost until API authentication and durable approval storage are implemented.
+- Do not deploy the mobile app publicly or expose the FastAPI port to a network before app authentication is enforced.
 - Treat mailbox content and Graph payloads as untrusted input.
 - Before pushing, check `git status`, inspect the diff, and scan tracked files for accidental secrets.
 - Make focused changes and preserve unrelated user work.
