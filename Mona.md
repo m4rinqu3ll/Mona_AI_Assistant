@@ -153,7 +153,8 @@ Never read, print, copy into documentation, or commit the user's real `.env` val
 - The user visually confirmed the corrected mobile home screen: styling loads, Mona reports online, and the backend, DeepSeek, and Outlook connection rows all show `Ready`.
 - Device authentication is now implemented and live. The unauthenticated app shows a pairing gate, protected health/API requests return HTTP 401, and successful pairing creates a revocable HttpOnly `SameSite=Strict` device cookie. Only hashes of pairing codes and session tokens are stored in the ignored `web/.mona/` directory.
 - Authentication validation passes: one-time-code invalidation, hashed secret storage, API lockout, pairing, authenticated status, logout, built assets, ESLint, and the production build.
-- **Next action:** Have the user refresh Mona, generate a local one-time code with `pnpm run pair`, and pair the current browser. Then add an encrypted private phone link without exposing FastAPI publicly.
+- The user successfully paired the current browser. The authenticated home screen now retrieves and displays the complete server-authorized paired-device list, marks the current browser as `This device`, and exposes no token hashes or session secrets.
+- **Next action:** Have the user refresh and confirm the paired-device list, then add an encrypted private phone link without exposing FastAPI publicly.
 
 ## Development commands
 

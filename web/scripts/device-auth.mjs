@@ -161,6 +161,21 @@ export async function verifySession(statePath, sessionToken, { now = Date.now() 
   });
 }
 
+export async function listDevices(statePath, { now = Date.now() } = {}) {
+  return mutateState(async () => {
+    const state = await readState(statePath);
+    pruneState(state, now);
+    return state.devices
+      .map((device) => ({
+        id: device.id,
+        name: device.name,
+        createdAt: device.createdAt,
+        lastSeenAt: device.lastSeenAt,
+      }))
+      .sort((left, right) => right.createdAt - left.createdAt);
+  });
+}
+
 export async function revokeSession(statePath, sessionToken) {
   if (!sessionToken || !sessionToken.includes(".")) return false;
   const [deviceId] = sessionToken.split(".", 1);
@@ -173,4 +188,3 @@ export async function revokeSession(statePath, sessionToken) {
     return state.devices.length !== originalCount;
   });
 }
-

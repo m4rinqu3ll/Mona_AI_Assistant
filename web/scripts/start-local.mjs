@@ -5,6 +5,7 @@ import { fileURLToPath, pathToFileURL } from "node:url";
 import { Readable } from "node:stream";
 import {
   defaultAuthStatePath,
+  listDevices,
   pairDevice,
   revokeSession,
   verifySession,
@@ -135,7 +136,11 @@ async function handleDeviceAuth(request, statePath) {
     const session = await verifySession(statePath, token);
     return jsonResponse(
       session.authenticated
-        ? { authenticated: true, device_name: session.deviceName }
+        ? {
+            authenticated: true,
+            device_id: session.deviceId,
+            device_name: session.deviceName,
+          }
         : { authenticated: false },
       session.authenticated || !token
         ? undefined
@@ -167,9 +172,30 @@ async function handleDeviceAuth(request, statePath) {
     }
 
     return jsonResponse(
-      { authenticated: true, device_name: result.deviceName },
+      {
+        authenticated: true,
+        device_id: result.deviceId,
+        device_name: result.deviceName,
+      },
       { cookie: sessionCookie(request, result.sessionToken) },
     );
+  }
+
+  if (url.pathname === "/api/device-auth/devices" && request.method === "GET") {
+    const session = await verifySession(statePath, sessionToken(request));
+    if (!session.authenticated) {
+      return jsonResponse({ detail: "This device is not approved." }, { status: 401 });
+    }
+    const devices = await listDevices(statePath);
+    return jsonResponse({
+      devices: devices.map((device) => ({
+        id: device.id,
+        name: device.name,
+        paired_at: device.createdAt,
+        last_seen_at: device.lastSeenAt,
+        current: device.id === session.deviceId,
+      })),
+    });
   }
 
   if (url.pathname === "/api/device-auth/logout" && request.method === "POST") {

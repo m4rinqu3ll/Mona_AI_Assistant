@@ -74,7 +74,8 @@ flowchart LR
 - [x] Visually confirmed the corrected Mona home screen: Mona is online and all three readiness checks show `Ready`.
 - [x] Added the device-pairing gate. Unapproved browsers cannot access Mona's private API routes; pairing codes expire after 10 minutes and work once.
 - [x] Kept device records local and Git-ignored, storing only hashes of pairing codes and session tokens.
+- [x] Paired the first browser and added an authenticated mobile-UI list of all paired devices, with the current browser clearly marked.
 
 ## Current next step
 
-Refresh Mona, run `pnpm run pair` locally in the `web` directory, and enter the one-time code to approve the current browser. After this check, add an encrypted private phone link; keep FastAPI on localhost.
+Refresh Mona and confirm the **Paired devices** card lists the approved browser with a **This device** marker. After this check, add an encrypted private phone link; keep FastAPI on localhost.

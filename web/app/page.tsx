@@ -15,7 +15,15 @@ type BackendState =
 type DeviceState =
   | { status: "checking" }
   | { status: "unpaired" }
-  | { status: "authenticated"; deviceName: string };
+  | { status: "authenticated"; deviceId: string; deviceName: string };
+
+type PairedDevice = {
+  id: string;
+  name: string;
+  pairedAt: number;
+  lastSeenAt: number;
+  current: boolean;
+};
 
 async function fetchBackendState(signal?: AbortSignal): Promise<BackendState> {
   try {
@@ -41,9 +49,34 @@ async function fetchBackendState(signal?: AbortSignal): Promise<BackendState> {
   }
 }
 
+async function fetchPairedDevices(signal?: AbortSignal): Promise<PairedDevice[]> {
+  const response = await fetch("/api/device-auth/devices", {
+    cache: "no-store",
+    signal,
+  });
+  if (!response.ok) return [];
+  const result = (await response.json()) as {
+    devices: Array<{
+      id: string;
+      name: string;
+      paired_at: number;
+      last_seen_at: number;
+      current: boolean;
+    }>;
+  };
+  return result.devices.map((device) => ({
+    id: device.id,
+    name: device.name,
+    pairedAt: device.paired_at,
+    lastSeenAt: device.last_seen_at,
+    current: device.current,
+  }));
+}
+
 export default function Home() {
   const [device, setDevice] = useState<DeviceState>({ status: "checking" });
   const [backend, setBackend] = useState<BackendState>({ status: "checking" });
+  const [pairedDevices, setPairedDevices] = useState<PairedDevice[]>([]);
   const [pairingCode, setPairingCode] = useState("");
   const [deviceName, setDeviceName] = useState("My device");
   const [pairing, setPairing] = useState(false);
@@ -60,6 +93,7 @@ export default function Home() {
         if (!response.ok) throw new Error("Device status unavailable.");
         const status = (await response.json()) as {
           authenticated: boolean;
+          device_id?: string;
           device_name?: string;
         };
         if (!status.authenticated) {
@@ -67,11 +101,17 @@ export default function Home() {
           return;
         }
 
+        const [backendState, devices] = await Promise.all([
+          fetchBackendState(controller.signal),
+          fetchPairedDevices(controller.signal),
+        ]);
         setDevice({
           status: "authenticated",
+          deviceId: status.device_id ?? "current",
           deviceName: status.device_name ?? "Approved device",
         });
-        setBackend(await fetchBackendState(controller.signal));
+        setPairedDevices(devices);
+        setBackend(backendState);
       })
       .catch((error: unknown) => {
         if (!(error instanceof DOMException && error.name === "AbortError")) {
@@ -100,6 +140,7 @@ export default function Home() {
       });
       const result = (await response.json()) as {
         authenticated?: boolean;
+        device_id?: string;
         device_name?: string;
         detail?: string;
       };
@@ -111,9 +152,15 @@ export default function Home() {
       setPairingCode("");
       setDevice({
         status: "authenticated",
+        deviceId: result.device_id ?? "current",
         deviceName: result.device_name ?? "Approved device",
       });
-      setBackend(await fetchBackendState());
+      const [backendState, devices] = await Promise.all([
+        fetchBackendState(),
+        fetchPairedDevices(),
+      ]);
+      setPairedDevices(devices);
+      setBackend(backendState);
     } catch {
       setPairingError("Mona could not verify this device. Please try again.");
     } finally {
@@ -124,6 +171,7 @@ export default function Home() {
   async function removeDevice() {
     await fetch("/api/device-auth/logout", { method: "POST" });
     setBackend({ status: "checking" });
+    setPairedDevices([]);
     setDevice({ status: "unpaired" });
   }
 
@@ -253,11 +301,24 @@ export default function Home() {
             <div className="device-title-row">
               <div>
                 <p className="eyebrow">Device protection</p>
-                <h2>Approved device</h2>
+                <h2>Paired devices</h2>
               </div>
-              <span className="ready-label">Ready</span>
+              <span className="ready-label">{pairedDevices.length}</span>
             </div>
-            <p>{device.deviceName} has a private, revocable session.</p>
+            <div className="paired-device-list">
+              {pairedDevices.map((pairedDevice) => (
+                <div className="paired-device-row" key={pairedDevice.id}>
+                  <span className="device-icon" aria-hidden="true">
+                    {pairedDevice.name.slice(0, 1).toUpperCase()}
+                  </span>
+                  <div>
+                    <h3>{pairedDevice.name}</h3>
+                    <p>Paired {formatPairedDate(pairedDevice.pairedAt)}</p>
+                  </div>
+                  {pairedDevice.current ? <span className="current-device">This device</span> : null}
+                </div>
+              ))}
+            </div>
             <button className="text-button" type="button" onClick={() => void removeDevice()}>
               Remove this device
             </button>
@@ -290,6 +351,13 @@ export default function Home() {
       </section>
     </main>
   );
+}
+
+function formatPairedDate(timestamp: number) {
+  const paired = new Date(timestamp);
+  const today = new Date();
+  if (paired.toDateString() === today.toDateString()) return "today";
+  return paired.toLocaleDateString(undefined, { month: "short", day: "numeric" });
 }
 
 function MonaHeader({ state }: { state: "Checking" | "Locked" | "Approved" }) {

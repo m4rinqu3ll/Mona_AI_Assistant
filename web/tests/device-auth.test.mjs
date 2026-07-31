@@ -5,6 +5,7 @@ import { join } from "node:path";
 import test from "node:test";
 import {
   createPairing,
+  listDevices,
   pairDevice,
   revokeSession,
   verifySession,
@@ -42,6 +43,13 @@ test("pairing codes are one-time and device tokens are stored only as hashes", a
   const rawToken = paired.sessionToken.split(".", 2)[1];
   assert.equal(stateContents.includes(rawCode), false);
   assert.equal(stateContents.includes(rawToken), false);
+
+  const devices = await listDevices(statePath);
+  assert.equal(devices.length, 1);
+  assert.equal(devices[0].id, paired.deviceId);
+  assert.equal(devices[0].name, "Test phone");
+  assert.equal(Number.isFinite(devices[0].createdAt), true);
+  assert.equal(Number.isFinite(devices[0].lastSeenAt), true);
 
   assert.equal(await revokeSession(statePath, paired.sessionToken), true);
   assert.deepEqual(await verifySession(statePath, paired.sessionToken), {

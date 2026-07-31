@@ -483,6 +483,60 @@ button {
   line-height: 1.45;
 }
 
+.paired-device-list {
+  margin-top: 12px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  overflow: hidden;
+  background: rgb(5 12 18 / 0.28);
+}
+
+.paired-device-row {
+  display: flex;
+  min-height: 58px;
+  align-items: center;
+  gap: 10px;
+  padding: 10px;
+}
+
+.paired-device-row + .paired-device-row {
+  border-top: 1px solid var(--line);
+}
+
+.device-icon {
+  display: grid;
+  width: 34px;
+  height: 34px;
+  flex: 0 0 auto;
+  place-items: center;
+  border-radius: 11px;
+  color: #0c251c;
+  background: var(--accent);
+  font-size: 13px;
+  font-weight: 850;
+}
+
+.paired-device-row h3 {
+  margin: 0;
+  font-size: 12px;
+}
+
+.paired-device-row p {
+  margin-top: 2px !important;
+  font-size: 10px !important;
+}
+
+.current-device {
+  margin-left: auto;
+  padding: 5px 7px;
+  border-radius: 999px;
+  color: var(--accent);
+  background: rgb(143 225 194 / 0.08);
+  font-size: 9px;
+  font-weight: 750;
+  white-space: nowrap;
+}
+
 .text-button {
   margin: 10px 0 0;
   padding: 0;

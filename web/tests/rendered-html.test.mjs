@@ -90,10 +90,21 @@ test("local launcher pairs one device and protects private APIs", async (context
   const status = await fetch(`${origin}/api/device-auth/status`, {
     headers: { cookie },
   });
-  assert.deepEqual(await status.json(), {
-    authenticated: true,
-    device_name: "Test phone",
+  const statusPayload = await status.json();
+  assert.equal(statusPayload.authenticated, true);
+  assert.equal(statusPayload.device_name, "Test phone");
+  assert.match(statusPayload.device_id, /^[0-9a-f-]{36}$/i);
+
+  const devices = await fetch(`${origin}/api/device-auth/devices`, {
+    headers: { cookie },
   });
+  const devicesPayload = await devices.json();
+  assert.equal(devicesPayload.devices.length, 1);
+  assert.equal(devicesPayload.devices[0].id, statusPayload.device_id);
+  assert.equal(devicesPayload.devices[0].name, "Test phone");
+  assert.equal(devicesPayload.devices[0].current, true);
+  assert.equal(Number.isFinite(devicesPayload.devices[0].paired_at), true);
+  assert.equal(Number.isFinite(devicesPayload.devices[0].last_seen_at), true);
 
   const logout = await fetch(`${origin}/api/device-auth/logout`, {
     method: "POST",
