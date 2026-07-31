@@ -111,9 +111,15 @@ Never read, print, copy into documentation, or commit the user's real `.env` val
 - The user has a personal Outlook account.
 - The user has a DeepSeek API key configured locally.
 - The user created an Azure free account and received the trial credit.
+- The default Microsoft Entra tenant is accessible. The user renamed its display name from `Default Directory`; the new name was not recorded in chat.
+- The Mona app registration was created with account type `Any Entra ID Tenant + Personal Microsoft accounts`.
+- Mona's `Allow public client flows` setting is enabled for device-code authentication.
+- Microsoft Graph delegated permissions `User.Read`, `Mail.ReadWrite`, and `Mail.Send` are configured.
+- Mona's Application (client) ID is configured locally in `.env`, and `MS_TENANT_ID=common` is set.
+- The DeepSeek API key is present locally and `LLM_PROVIDER=deepseek` is configured.
 - The earlier Microsoft error occurred before the Azure account/tenant setup was complete.
-- **Next action:** Open the default `Microsoft Entra ID` tenant in Azure Portal and confirm its Overview page works. Do not create an additional tenant yet.
-- After that: create the Mona app registration, enable public-client flows, add delegated Graph permissions, configure `MS_CLIENT_ID`, authenticate, and run the first read-only email test.
+- **Next action:** Start Mona locally with `.\.venv\Scripts\python.exe -m uvicorn agent.app:app --reload`, leave that terminal running, and open `http://127.0.0.1:8000/docs`.
+- After that: authenticate through device code and run the first read-only email test.
 
 ## Development commands
 

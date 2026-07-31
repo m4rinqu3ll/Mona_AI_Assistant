@@ -42,14 +42,16 @@ flowchart LR
 - [x] Outlook account available.
 - [x] DeepSeek API key available and stored locally.
 - [x] Azure free account created with trial credit.
-- [ ] Open the default Microsoft Entra ID tenant and confirm its Overview page is accessible.
-- [ ] Register Mona as a public-client application.
-- [ ] Configure Microsoft Graph delegated permissions.
-- [ ] Add the application/client ID to the local `.env` file.
+- [x] Opened the default Microsoft Entra ID tenant, confirmed its Overview page is accessible, and renamed its display name from `Default Directory`.
+- [x] Registered Mona with account type `Any Entra ID Tenant + Personal Microsoft accounts`.
+- [x] Enabled Mona's public-client flow for device-code authentication.
+- [x] Configured Microsoft Graph delegated permissions: `User.Read`, `Mail.ReadWrite`, and `Mail.Send`.
+- [x] Added the application/client ID to the local `.env` file and kept `MS_TENANT_ID=common`.
+- [x] Selected DeepSeek as Mona's active LLM provider in `.env`.
 - [ ] Authenticate through Microsoft's device-code flow.
 - [ ] Start Mona and test the first read-only email chat.
 - [ ] Test an email draft/send action with explicit approval.
 
 ## Current next step
 
-Open [Azure Portal](https://portal.azure.com), search for **Microsoft Entra ID**, open it, and select **Overview**. Do not create another tenant yet.
+Start Mona from the repository with `.\.venv\Scripts\python.exe -m uvicorn agent.app:app --reload`, keep the terminal open, and open `http://127.0.0.1:8000/docs`.
