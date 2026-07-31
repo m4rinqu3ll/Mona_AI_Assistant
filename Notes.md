@@ -13,6 +13,7 @@
 - **FastAPI** — Exposes Mona's local authentication, chat, and tool endpoints.
 - **DeepSeek API** — Interprets the user's request and decides which approved Mona tool to use.
 - **Mona mobile PWA** — A phone-friendly private interface for chat and approvals; the first local shell is implemented, but remote access is not enabled yet.
+- **Device pairing** — A short, one-time code approves a browser and gives it a private revocable session without putting secrets in browser storage.
 
 ## Connection map
 
@@ -71,7 +72,9 @@ flowchart LR
 - [x] Verified the mobile shell with a production build, lint check, and rendered-page test.
 - [x] Fixed the Windows local-preview failure that loaded HTML without styling. Mona's local launcher now serves its built CSS and JavaScript directly, with an automated asset test.
 - [x] Visually confirmed the corrected Mona home screen: Mona is online and all three readiness checks show `Ready`.
+- [x] Added the device-pairing gate. Unapproved browsers cannot access Mona's private API routes; pairing codes expire after 10 minutes and work once.
+- [x] Kept device records local and Git-ignored, storing only hashes of pairing codes and session tokens.
 
 ## Current next step
 
-Add secure private phone access. Do not enable chat or mobile approvals before authentication and immutable pending approvals exist.
+Refresh Mona, run `pnpm run pair` locally in the `web` directory, and enter the one-time code to approve the current browser. After this check, add an encrypted private phone link; keep FastAPI on localhost.

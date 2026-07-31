@@ -3,9 +3,17 @@ import { readFile } from "node:fs/promises";
 import { extname, resolve, sep } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { Readable } from "node:stream";
+import {
+  defaultAuthStatePath,
+  pairDevice,
+  revokeSession,
+  verifySession,
+} from "./device-auth.mjs";
 
 const moduleDirectory = fileURLToPath(new URL(".", import.meta.url));
 const defaultRoot = resolve(moduleDirectory, "..");
+const sessionCookieName = "mona_device";
+const sessionLifetimeSeconds = 90 * 24 * 60 * 60;
 
 const contentTypes = {
   ".css": "text/css; charset=utf-8",
@@ -85,6 +93,96 @@ async function sendWebResponse(response, request, result) {
   Readable.fromWeb(response.body).pipe(result);
 }
 
+function parseCookies(cookieHeader) {
+  const cookies = new Map();
+  for (const part of String(cookieHeader ?? "").split(";")) {
+    const separator = part.indexOf("=");
+    if (separator === -1) continue;
+    cookies.set(part.slice(0, separator).trim(), part.slice(separator + 1).trim());
+  }
+  return cookies;
+}
+
+function sessionToken(request) {
+  return parseCookies(request.headers.get("cookie")).get(sessionCookieName) ?? "";
+}
+
+function isSecureRequest(request) {
+  const forwardedProtocol = request.headers.get("x-forwarded-proto")?.split(",", 1)[0].trim();
+  return new URL(request.url).protocol === "https:" || forwardedProtocol === "https";
+}
+
+function sessionCookie(request, value, maximumAge = sessionLifetimeSeconds) {
+  const secure = isSecureRequest(request) ? "; Secure" : "";
+  return `${sessionCookieName}=${value}; Path=/; HttpOnly; SameSite=Strict; Max-Age=${maximumAge}${secure}`;
+}
+
+function jsonResponse(payload, { status = 200, cookie } = {}) {
+  const headers = new Headers({
+    "cache-control": "no-store",
+    "content-type": "application/json; charset=utf-8",
+    "x-content-type-options": "nosniff",
+  });
+  if (cookie) headers.append("set-cookie", cookie);
+  return new Response(JSON.stringify(payload), { status, headers });
+}
+
+async function handleDeviceAuth(request, statePath) {
+  const url = new URL(request.url);
+
+  if (url.pathname === "/api/device-auth/status" && request.method === "GET") {
+    const token = sessionToken(request);
+    const session = await verifySession(statePath, token);
+    return jsonResponse(
+      session.authenticated
+        ? { authenticated: true, device_name: session.deviceName }
+        : { authenticated: false },
+      session.authenticated || !token
+        ? undefined
+        : { cookie: sessionCookie(request, "", 0) },
+    );
+  }
+
+  if (url.pathname === "/api/device-auth/pair" && request.method === "POST") {
+    if (!request.headers.get("content-type")?.toLowerCase().startsWith("application/json")) {
+      return jsonResponse({ detail: "Expected a JSON request." }, { status: 415 });
+    }
+
+    let payload;
+    try {
+      payload = await request.json();
+    } catch {
+      return jsonResponse({ detail: "Invalid request." }, { status: 400 });
+    }
+
+    const result = await pairDevice(statePath, {
+      code: payload?.code,
+      deviceName: payload?.device_name,
+    });
+    if (!result.authenticated) {
+      return jsonResponse(
+        { detail: "The pairing code is invalid or expired." },
+        { status: 401 },
+      );
+    }
+
+    return jsonResponse(
+      { authenticated: true, device_name: result.deviceName },
+      { cookie: sessionCookie(request, result.sessionToken) },
+    );
+  }
+
+  if (url.pathname === "/api/device-auth/logout" && request.method === "POST") {
+    await revokeSession(statePath, sessionToken(request));
+    return jsonResponse(
+      { authenticated: false },
+      { cookie: sessionCookie(request, "", 0) },
+    );
+  }
+
+  return jsonResponse({ detail: "Not Found" }, { status: 404 });
+}
+
 function createAssetReader(clientDirectory) {
   const resolvedClient = resolve(clientDirectory);
 
@@ -124,7 +222,11 @@ function createAssetReader(clientDirectory) {
   };
 }
 
-export async function createMonaServer({ root = defaultRoot, hostname = "127.0.0.1" } = {}) {
+export async function createMonaServer({
+  root = defaultRoot,
+  hostname = "127.0.0.1",
+  authStatePath = defaultAuthStatePath(root),
+} = {}) {
   const clientDirectory = resolve(root, "dist", "client");
   const serverEntry = resolve(root, "dist", "server", "index.js");
   const readAsset = createAssetReader(clientDirectory);
@@ -149,9 +251,21 @@ export async function createMonaServer({ root = defaultRoot, hostname = "127.0.0
   return createServer(async (request, result) => {
     try {
       const webRequest = await toWebRequest(request, hostname);
-      const response = webRequest.url.includes("/assets/")
-        ? await readAsset(webRequest)
-        : await worker.fetch(webRequest, environment, executionContext);
+      const pathname = new URL(webRequest.url).pathname;
+      let response;
+
+      if (pathname.startsWith("/assets/")) {
+        response = await readAsset(webRequest);
+      } else if (pathname.startsWith("/api/device-auth/")) {
+        response = await handleDeviceAuth(webRequest, authStatePath);
+      } else if (pathname.startsWith("/api/")) {
+        const session = await verifySession(authStatePath, sessionToken(webRequest));
+        response = session.authenticated
+          ? await worker.fetch(webRequest, environment, executionContext)
+          : jsonResponse({ detail: "This device is not approved." }, { status: 401 });
+      } else {
+        response = await worker.fetch(webRequest, environment, executionContext);
+      }
       await sendWebResponse(response, request, result);
     } catch (error) {
       console.error("[Mona] Local web request failed:", error);
@@ -172,4 +286,3 @@ if (launchedDirectly) {
     console.log(`[Mona] Mobile app running at http://${hostname}:${port}`);
   });
 }
-

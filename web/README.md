@@ -25,3 +25,14 @@ Open `http://127.0.0.1:3000`.
 
 The local launcher binds to `127.0.0.1` by default. Optional overrides are `--hostname` and `--port`; do not bind to a network interface until Mona has app authentication.
 
+## Pair a device
+
+Generate a one-time code locally:
+
+```powershell
+pnpm run pair
+```
+
+On Windows, `scripts\show-pairing-code.ps1` provides the same local-only flow when Node is not already on the terminal path.
+
+Enter the displayed code in Mona. It expires after 10 minutes and is invalidated immediately after successful use or when another code is generated. Approved-device records are stored under the ignored `.mona/` directory; raw pairing codes and session tokens are never stored.

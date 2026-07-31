@@ -68,6 +68,7 @@ Approval trust boundary:
 - Provider-neutral memory interface; durable long-term memory is not implemented yet.
 - Structured logging and an automated test suite.
 - A mobile-first PWA shell in `web/`, with a server-side health proxy that exposes only non-sensitive readiness state. Chat and approvals remain locked until app authentication and durable approvals are implemented.
+- Local device pairing for the mobile shell: one-time codes expire after 10 minutes, are attempt-limited and single-use, and create revocable HttpOnly device sessions. Private `/api/*` routes reject unapproved devices.
 
 ## Important files
 
@@ -89,6 +90,9 @@ Approval trust boundary:
 - `.env.example` — Safe configuration template; contains no real secrets.
 - `web/` — Mona's mobile-first web application and server-side bridge to the FastAPI backend.
 - `web/app/api/mona-health/route.ts` — Safe server-side health proxy; the browser does not receive backend credentials.
+- `web/scripts/device-auth.mjs` — Durable local device-pairing and revocable-session logic.
+- `web/scripts/pair-device.mjs` — Local one-time pairing-code generator.
+- `web/scripts/start-local.mjs` — Local web launcher, static-file server, and authentication enforcement boundary.
 
 ## Local configuration
 
@@ -147,7 +151,9 @@ Never read, print, copy into documentation, or commit the user's real `.env` val
 - The PWA production build, ESLint check, and rendered HTML test pass. It is intentionally local-only: chat and approvals are disabled until secure app authentication and durable immutable pending actions are implemented.
 - The first browser check exposed a Windows-only vinext local-server issue: HTML loaded while hashed CSS and JavaScript returned 404. `web/scripts/start-local.mjs` now safely serves built assets and delegates application requests to the compiled worker. An integration test verifies every CSS and JavaScript URL returns HTTP 200, and the live readiness proxy reports Mona, Microsoft, and the LLM configured.
 - The user visually confirmed the corrected mobile home screen: styling loads, Mona reports online, and the backend, DeepSeek, and Outlook connection rows all show `Ready`.
-- **Next action:** Implement secure private phone access before exposing chat or approval controls.
+- Device authentication is now implemented and live. The unauthenticated app shows a pairing gate, protected health/API requests return HTTP 401, and successful pairing creates a revocable HttpOnly `SameSite=Strict` device cookie. Only hashes of pairing codes and session tokens are stored in the ignored `web/.mona/` directory.
+- Authentication validation passes: one-time-code invalidation, hashed secret storage, API lockout, pairing, authenticated status, logout, built assets, ESLint, and the production build.
+- **Next action:** Have the user refresh Mona, generate a local one-time code with `pnpm run pair`, and pair the current browser. Then add an encrypted private phone link without exposing FastAPI publicly.
 
 ## Development commands
 
@@ -169,6 +175,7 @@ Interactive API documentation is available locally at `http://127.0.0.1:8000/doc
 - Do not enable `AUTO_APPROVE_TOOLS=true` unless the user explicitly accepts the risk in a trusted local environment.
 - Keep Mona bound to localhost until API authentication and durable approval storage are implemented.
 - Do not deploy the mobile app publicly or expose the FastAPI port to a network before app authentication is enforced.
+- Keep `web/.mona/` ignored. It contains device-authentication state and must never be committed or copied into documentation.
 - Treat mailbox content and Graph payloads as untrusted input.
 - Before pushing, check `git status`, inspect the diff, and scan tracked files for accidental secrets.
 - Make focused changes and preserve unrelated user work.

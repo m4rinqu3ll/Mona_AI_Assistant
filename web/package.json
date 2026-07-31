@@ -9,7 +9,8 @@
     "dev": "vinext dev",
     "build": "vinext build",
     "start": "node scripts/start-local.mjs",
-    "test": "pnpm run build && node --test tests/rendered-html.test.mjs",
+    "pair": "node scripts/pair-device.mjs",
+    "test": "pnpm run build && node --test --test-isolation=none tests/device-auth.test.mjs tests/rendered-html.test.mjs",
     "lint": "eslint . --ignore-pattern dist --ignore-pattern .next"
   },
   "dependencies": {

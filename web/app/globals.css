@@ -69,6 +69,7 @@ button {
 .brand-lockup,
 .section-heading,
 .status-row,
+.device-card,
 .next-card,
 .bottom-nav {
   display: flex;
@@ -147,6 +148,129 @@ button {
   border-radius: 50%;
   background: var(--accent);
   box-shadow: 0 0 12px rgb(143 225 194 / 0.75);
+}
+
+.private-locked .lock-dot {
+  background: #f0c77a;
+  box-shadow: 0 0 12px rgb(240 199 122 / 0.65);
+}
+
+.private-checking .lock-dot {
+  animation: breathe 1.7s ease-in-out infinite;
+}
+
+.pairing-card {
+  position: relative;
+  margin-top: clamp(28px, 8dvh, 76px);
+  padding: 34px 24px 26px;
+  border: 1px solid rgb(143 225 194 / 0.14);
+  border-radius: 30px;
+  text-align: center;
+  background: linear-gradient(155deg, rgb(29 49 61 / 0.96), rgb(15 26 36 / 0.98));
+  box-shadow: 0 24px 70px rgb(0 0 0 / 0.3);
+}
+
+.pairing-lock {
+  display: grid;
+  width: 82px;
+  height: 82px;
+  margin: 0 auto 22px;
+  place-items: center;
+  border: 1px solid rgb(143 225 194 / 0.28);
+  border-radius: 26px;
+  color: #12382b;
+  background: linear-gradient(145deg, #c8f4df, #6bc8a4);
+  box-shadow: 0 18px 45px rgb(75 182 143 / 0.18);
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 42px;
+  font-weight: 700;
+}
+
+.pairing-card h2 {
+  margin: 0;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: clamp(28px, 8vw, 36px);
+  font-weight: 500;
+  letter-spacing: -0.035em;
+}
+
+.pairing-form {
+  display: grid;
+  gap: 9px;
+  margin-top: 22px;
+  text-align: left;
+}
+
+.pairing-form label {
+  margin-top: 5px;
+  color: #cbd5db;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.pairing-form input {
+  width: 100%;
+  min-height: 48px;
+  padding: 0 14px;
+  border: 1px solid rgb(255 255 255 / 0.12);
+  border-radius: 14px;
+  outline: none;
+  color: var(--ink);
+  background: rgb(5 12 18 / 0.58);
+  font: inherit;
+  font-size: 14px;
+}
+
+.pairing-form input:focus {
+  border-color: rgb(143 225 194 / 0.55);
+  box-shadow: 0 0 0 3px rgb(143 225 194 / 0.09);
+}
+
+#pairing-code {
+  font-size: 20px;
+  font-weight: 750;
+  letter-spacing: 0.12em;
+}
+
+.primary-button {
+  min-height: 48px;
+  margin-top: 10px;
+  border: 1px solid rgb(143 225 194 / 0.3);
+  border-radius: 14px;
+  color: #0a271d;
+  background: var(--accent);
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.primary-button:disabled {
+  cursor: wait;
+  opacity: 0.65;
+}
+
+.form-error {
+  margin: 4px 0 0;
+  color: #ffb6ad;
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.security-note {
+  margin: 20px 0 0;
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 1.5;
+}
+
+.pairing-progress {
+  width: 34px;
+  height: 34px;
+  margin: 24px auto 0;
+  border: 3px solid rgb(143 225 194 / 0.14);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: spin 0.9s linear infinite;
 }
 
 .hero-card {
@@ -258,6 +382,7 @@ button {
 }
 
 .section-heading h2,
+.device-card h2,
 .next-card h2 {
   font-size: 17px;
   letter-spacing: -0.015em;
@@ -323,6 +448,7 @@ button {
   font-size: 11px;
 }
 
+.device-card,
 .next-card {
   gap: 16px;
   margin-top: 16px;
@@ -330,6 +456,42 @@ button {
   border: 1px dashed rgb(255 255 255 / 0.12);
   border-radius: 20px;
   background: rgb(255 255 255 / 0.025);
+}
+
+.device-card {
+  align-items: flex-start;
+  border-style: solid;
+  background: rgb(143 225 194 / 0.04);
+}
+
+.device-card > div {
+  min-width: 0;
+  flex: 1;
+}
+
+.device-title-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.device-card p:not(.eyebrow) {
+  margin: 6px 0 0;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.text-button {
+  margin: 10px 0 0;
+  padding: 0;
+  border: 0;
+  color: var(--accent);
+  background: transparent;
+  cursor: pointer;
+  font-size: 11px;
+  font-weight: 700;
 }
 
 .next-number {
@@ -395,6 +557,12 @@ button {
   50% {
     transform: scale(0.96);
     opacity: 0.82;
+  }
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
   }
 }
 

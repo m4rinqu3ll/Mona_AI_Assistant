@@ -1,5 +1,9 @@
 import assert from "node:assert/strict";
+import { mkdtemp, rm } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import test from "node:test";
+import { createPairing } from "../scripts/device-auth.mjs";
 import { createMonaServer } from "../scripts/start-local.mjs";
 
 async function render() {
@@ -14,21 +18,23 @@ async function render() {
   );
 }
 
-test("server-renders the Mona mobile shell", async () => {
+test("server-renders the Mona device gate", async () => {
   const response = await render();
   assert.equal(response.status, 200);
   assert.match(response.headers.get("content-type") ?? "", /^text\/html\b/i);
 
   const html = await response.text();
-  assert.match(html, /<title>Mona — Private AI Assistant<\/title>/i);
-  assert.match(html, /Your private AI companion/);
-  assert.match(html, /Connection readiness/);
-  assert.match(html, /Secure phone access/);
+  assert.match(html, /<title>Mona .* Private AI Assistant<\/title>/i);
+  assert.match(html, /Private device access/);
+  assert.match(html, /Checking this device/);
   assert.doesNotMatch(html, /codex-preview|react-loading-skeleton|Your site is taking shape/i);
 });
 
 test("local launcher serves Mona's built CSS and JavaScript", async (context) => {
-  const server = await createMonaServer();
+  const temporaryDirectory = await mkdtemp(join(tmpdir(), "mona-web-test-"));
+  context.after(() => rm(temporaryDirectory, { recursive: true, force: true }));
+  const authStatePath = join(temporaryDirectory, "device-auth.json");
+  const server = await createMonaServer({ authStatePath });
   await new Promise((resolve, reject) => {
     server.once("error", reject);
     server.listen(0, "127.0.0.1", resolve);
@@ -51,4 +57,52 @@ test("local launcher serves Mona's built CSS and JavaScript", async (context) =>
     assert.equal(asset.status, 200, assetPath);
     assert.notEqual(await asset.text(), "");
   }
+});
+
+test("local launcher pairs one device and protects private APIs", async (context) => {
+  const temporaryDirectory = await mkdtemp(join(tmpdir(), "mona-pair-test-"));
+  context.after(() => rm(temporaryDirectory, { recursive: true, force: true }));
+  const authStatePath = join(temporaryDirectory, "device-auth.json");
+  const pairing = await createPairing(authStatePath);
+  const server = await createMonaServer({ authStatePath });
+  await new Promise((resolve, reject) => {
+    server.once("error", reject);
+    server.listen(0, "127.0.0.1", resolve);
+  });
+  context.after(() => new Promise((resolve) => server.close(resolve)));
+
+  const address = server.address();
+  assert(address && typeof address === "object");
+  const origin = `http://127.0.0.1:${address.port}`;
+
+  const blockedHealth = await fetch(`${origin}/api/mona-health`);
+  assert.equal(blockedHealth.status, 401);
+
+  const paired = await fetch(`${origin}/api/device-auth/pair`, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ code: pairing.code, device_name: "Test phone" }),
+  });
+  assert.equal(paired.status, 200);
+  const cookie = paired.headers.getSetCookie()[0].split(";", 1)[0];
+  assert.match(cookie, /^mona_device=/);
+
+  const status = await fetch(`${origin}/api/device-auth/status`, {
+    headers: { cookie },
+  });
+  assert.deepEqual(await status.json(), {
+    authenticated: true,
+    device_name: "Test phone",
+  });
+
+  const logout = await fetch(`${origin}/api/device-auth/logout`, {
+    method: "POST",
+    headers: { cookie },
+  });
+  assert.equal(logout.status, 200);
+
+  const signedOut = await fetch(`${origin}/api/device-auth/status`, {
+    headers: { cookie },
+  });
+  assert.deepEqual(await signedOut.json(), { authenticated: false });
 });
