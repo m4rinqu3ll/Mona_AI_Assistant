@@ -32,7 +32,13 @@ class Settings(BaseSettings):
     graph_timeout_seconds: float = Field(default=20.0, gt=0, le=120)
     graph_max_retries: int = Field(default=3, ge=0, le=8)
 
-    llm_provider: Literal["disabled", "openai"] = "disabled"
+    llm_provider: Literal["disabled", "openai", "deepseek"] = "disabled"
+
+    deepseek_api_key: str | None = None
+    deepseek_model: str = "deepseek-v4-flash"
+    deepseek_base_url: str = "https://api.deepseek.com"
+    deepseek_thinking: bool = False
+
     openai_api_key: str | None = None
     openai_model: str = "gpt-5.6-sol"
     openai_base_url: str | None = None
@@ -46,7 +52,13 @@ class Settings(BaseSettings):
             return [scope.strip() for scope in value.split(",") if scope.strip()]
         return value
 
-    @field_validator("ms_client_id", "openai_api_key", "openai_base_url", mode="before")
+    @field_validator(
+        "ms_client_id",
+        "deepseek_api_key",
+        "openai_api_key",
+        "openai_base_url",
+        mode="before",
+    )
     @classmethod
     def empty_to_none(cls, value: object) -> object:
         return None if value == "" else value
@@ -54,6 +66,14 @@ class Settings(BaseSettings):
     @property
     def ms_authority(self) -> str:
         return f"https://login.microsoftonline.com/{self.ms_tenant_id}"
+
+    @property
+    def llm_configured(self) -> bool:
+        if self.llm_provider == "deepseek":
+            return bool(self.deepseek_api_key)
+        if self.llm_provider == "openai":
+            return bool(self.openai_api_key)
+        return False
 
 
 @lru_cache(maxsize=1)

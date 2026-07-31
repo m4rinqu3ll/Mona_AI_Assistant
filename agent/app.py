@@ -59,9 +59,7 @@ def create_app(
             status="ok",
             version=__version__,
             microsoft_auth_configured=container.authenticator is not None,
-            llm_configured=(
-                settings.llm_provider != "disabled" and bool(settings.openai_api_key)
-            ),
+            llm_configured=settings.llm_configured,
         )
 
     @app.get("/tools")

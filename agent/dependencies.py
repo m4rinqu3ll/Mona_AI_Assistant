@@ -10,6 +10,7 @@ from agent.clients.graph import MicrosoftGraphClient
 from agent.config import Settings
 from agent.dispatcher import ToolDispatcher
 from agent.llm.base import LLMProvider
+from agent.llm.deepseek_provider import DeepSeekProvider
 from agent.llm.disabled_provider import DisabledLLMProvider
 from agent.llm.openai_provider import OpenAIProvider
 from agent.services.chat import ChatService
@@ -59,7 +60,14 @@ def build_container(settings: Settings) -> Container:
     dispatcher.register(EmailTool(graph_client))
 
     provider: LLMProvider
-    if settings.llm_provider == "openai" and settings.openai_api_key:
+    if settings.llm_provider == "deepseek" and settings.deepseek_api_key:
+        provider = DeepSeekProvider(
+            api_key=settings.deepseek_api_key,
+            model=settings.deepseek_model,
+            base_url=settings.deepseek_base_url,
+            thinking=settings.deepseek_thinking,
+        )
+    elif settings.llm_provider == "openai" and settings.openai_api_key:
         provider = OpenAIProvider(
             api_key=settings.openai_api_key,
             model=settings.openai_model,

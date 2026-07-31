@@ -12,7 +12,7 @@ business behavior, and clients own external API details.
 - Outlook email actions: unread, read, search, send, reply, mark read, and attachment retrieval
 - Approval-aware mutating actions (manual by default; optional Phase 1 auto-approval)
 - FastAPI endpoints: `/health`, `/tools`, `/tool`, `/chat`, and device-code authentication
-- Swappable `LLMProvider` abstraction with an OpenAI implementation
+- Swappable `LLMProvider` abstraction with DeepSeek and OpenAI implementations
 - Provider-neutral memory interface, with long-term storage intentionally not implemented
 - Structured JSON logs with tool name, action, duration, error code, and correlation ID
 
@@ -40,7 +40,7 @@ See [the detailed architecture](docs/architecture.md),
 ## Installation
 
 Prerequisites: Python 3.12+, [uv](https://docs.astral.sh/uv/), a Microsoft Entra public-client
-application, and (for `/chat`) an OpenAI API key.
+application, and a DeepSeek or OpenAI API key.
 
 ```powershell
 uv sync --extra dev
@@ -58,7 +58,17 @@ MS_CLIENT_ID=your-application-client-id
 MS_TENANT_ID=common
 ```
 
-To enable chat reasoning:
+To use DeepSeek for chat reasoning:
+
+```dotenv
+LLM_PROVIDER=deepseek
+DEEPSEEK_API_KEY=your-deepseek-api-key
+DEEPSEEK_MODEL=deepseek-v4-flash
+DEEPSEEK_BASE_URL=https://api.deepseek.com
+DEEPSEEK_THINKING=false
+```
+
+Alternatively, to use OpenAI:
 
 ```dotenv
 LLM_PROVIDER=openai
@@ -76,6 +86,9 @@ uv run uvicorn agent.app:app --reload
 Open `http://127.0.0.1:8000/docs`. Start authentication with
 `POST /auth/device-code`, follow its browser instruction, then submit the returned `flow_id` to
 `POST /auth/device-code/{flow_id}/complete`.
+
+For a complete first-run walkthrough, see
+[First email chat with Mona](docs/first-email-chat.md).
 
 ## API examples
 

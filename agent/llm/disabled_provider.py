@@ -16,6 +16,5 @@ class DisabledLLMProvider(LLMProvider):
     ) -> LLMResponse:
         del messages, tools
         raise ConfigurationError(
-            "LLM integration is disabled. Set LLM_PROVIDER=openai and OPENAI_API_KEY."
+            "LLM integration is disabled or missing an API key. Configure an enabled provider."
         )
-
