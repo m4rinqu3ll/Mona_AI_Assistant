@@ -25,6 +25,11 @@ type PairedDevice = {
   current: boolean;
 };
 
+type ChatMessage = {
+  role: "user" | "assistant";
+  content: string;
+};
+
 async function fetchBackendState(signal?: AbortSignal): Promise<BackendState> {
   try {
     const response = await fetch("/api/mona-health", {
@@ -81,6 +86,16 @@ export default function Home() {
   const [deviceName, setDeviceName] = useState("My device");
   const [pairing, setPairing] = useState(false);
   const [pairingError, setPairingError] = useState("");
+  const [activeView, setActiveView] = useState<"home" | "chat">("home");
+  const [chatMessages, setChatMessages] = useState<ChatMessage[]>([
+    {
+      role: "assistant",
+      content: "Hi, I'm Mona. Ask me a read-only question about your Outlook inbox.",
+    },
+  ]);
+  const [chatInput, setChatInput] = useState("");
+  const [chatPending, setChatPending] = useState(false);
+  const [chatError, setChatError] = useState("");
 
   useEffect(() => {
     const controller = new AbortController();
@@ -175,6 +190,39 @@ export default function Home() {
     setDevice({ status: "unpaired" });
   }
 
+  async function submitChat(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const message = chatInput.trim();
+    if (!message || chatPending) return;
+
+    const history = chatMessages.slice(-30);
+    setChatMessages((current) => [...current, { role: "user", content: message }]);
+    setChatInput("");
+    setChatError("");
+    setChatPending(true);
+
+    try {
+      const response = await fetch("/api/mona-chat", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ message, history }),
+      });
+      const result = (await response.json()) as { message?: string; detail?: string };
+      if (!response.ok || !result.message) {
+        setChatError(result.detail ?? "Mona could not answer that request.");
+        return;
+      }
+      setChatMessages((current) => [
+        ...current,
+        { role: "assistant", content: result.message ?? "" },
+      ]);
+    } catch {
+      setChatError("Mona's local service is unavailable.");
+    } finally {
+      setChatPending(false);
+    }
+  }
+
   if (device.status !== "authenticated") {
     return (
       <main className="app-shell">
@@ -244,6 +292,7 @@ export default function Home() {
       <section className="phone-surface" aria-label="Mona mobile home">
         <MonaHeader state="Approved" />
 
+        {activeView === "home" ? <>
         <section className="hero-card">
           <div className={`presence-orb presence-${backend.status}`} aria-hidden="true">
             <span>M</span>
@@ -325,21 +374,82 @@ export default function Home() {
           </div>
         </section>
 
-        <section className="next-card">
+        <section className="next-card next-complete">
           <span className="next-number">03</span>
           <div>
-            <p className="eyebrow">Coming next</p>
+            <p className="eyebrow">Private connection ready</p>
             <h2>Private phone link</h2>
-            <p>Connect your phone without exposing the Mona backend publicly.</p>
+            <p>Your paired devices can reach Mona privately through Tailscale Serve.</p>
           </div>
         </section>
 
+        <section className="next-card">
+          <span className="next-number">04</span>
+          <div>
+            <p className="eyebrow">Ready to test</p>
+            <h2>Secure chat</h2>
+            <p>Open Chat and ask Mona a read-only question about your Outlook inbox.</p>
+          </div>
+        </section>
+        </> : (
+          <section className="chat-view" aria-labelledby="chat-title">
+            <div className="chat-heading">
+              <p className="eyebrow">Private conversation</p>
+              <h2 id="chat-title">Chat with Mona</h2>
+              <p>Read-only Outlook requests are safe to test first.</p>
+            </div>
+
+            <div className="message-list" aria-live="polite">
+              {chatMessages.map((message, index) => (
+                <article className={`message message-${message.role}`} key={`${message.role}-${index}`}>
+                  <span>{message.role === "assistant" ? "Mona" : "You"}</span>
+                  <p>{message.content}</p>
+                </article>
+              ))}
+              {chatPending ? (
+                <article className="message message-assistant message-thinking">
+                  <span>Mona</span>
+                  <p>Thinking...</p>
+                </article>
+              ) : null}
+            </div>
+
+            <form className="chat-form" onSubmit={submitChat}>
+              <label className="sr-only" htmlFor="chat-message">Message Mona</label>
+              <textarea
+                id="chat-message"
+                rows={2}
+                maxLength={20_000}
+                placeholder="Ask about your unread emails..."
+                value={chatInput}
+                onChange={(event) => setChatInput(event.target.value)}
+                disabled={chatPending || !isOnline}
+                required
+              />
+              <button type="submit" disabled={chatPending || !chatInput.trim() || !isOnline}>
+                {chatPending ? "Sending" : "Send"}
+              </button>
+            </form>
+            {chatError ? <p className="form-error chat-error" role="alert">{chatError}</p> : null}
+          </section>
+        )}
+
         <nav className="bottom-nav" aria-label="Primary navigation">
-          <button className="nav-item nav-active" type="button" aria-current="page">
+          <button
+            className={`nav-item ${activeView === "home" ? "nav-active" : ""}`}
+            type="button"
+            aria-current={activeView === "home" ? "page" : undefined}
+            onClick={() => setActiveView("home")}
+          >
             <span className="nav-symbol" aria-hidden="true">{`\u25cf`}</span>
             Home
           </button>
-          <button className="nav-item" type="button" disabled>
+          <button
+            className={`nav-item ${activeView === "chat" ? "nav-active" : ""}`}
+            type="button"
+            aria-current={activeView === "chat" ? "page" : undefined}
+            onClick={() => setActiveView("chat")}
+          >
             <span className="nav-symbol" aria-hidden="true">{`\u25c7`}</span>
             Chat
           </button>

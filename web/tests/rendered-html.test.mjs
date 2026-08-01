@@ -30,6 +30,25 @@ test("server-renders the Mona device gate", async () => {
   assert.doesNotMatch(html, /codex-preview|react-loading-skeleton|Your site is taking shape/i);
 });
 
+test("chat route validates a request before contacting Mona", async () => {
+  const workerUrl = new URL("../dist/server/index.js", import.meta.url);
+  workerUrl.searchParams.set("chat-test", `${process.pid}-${Date.now()}`);
+  const { default: worker } = await import(workerUrl.href);
+
+  const response = await worker.fetch(
+    new Request("http://localhost/api/mona-chat", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({}),
+    }),
+    { ASSETS: { fetch: async () => new Response("Not found", { status: 404 }) } },
+    { waitUntil() {}, passThroughOnException() {} },
+  );
+
+  assert.equal(response.status, 400);
+  assert.deepEqual(await response.json(), { detail: "Message or chat history is invalid." });
+});
+
 test("local launcher serves Mona's built CSS and JavaScript", async (context) => {
   const temporaryDirectory = await mkdtemp(join(tmpdir(), "mona-web-test-"));
   context.after(() => rm(temporaryDirectory, { recursive: true, force: true }));

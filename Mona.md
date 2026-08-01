@@ -67,7 +67,7 @@ Approval trust boundary:
 - Provider-neutral `LLMProvider` with DeepSeek and OpenAI implementations.
 - Provider-neutral memory interface; durable long-term memory is not implemented yet.
 - Structured logging and an automated test suite.
-- A mobile-first PWA shell in `web/`, with a server-side health proxy that exposes only non-sensitive readiness state. Chat and approvals remain locked until app authentication and durable approvals are implemented.
+- A mobile-first PWA shell in `web/`, with server-side health and chat proxies. Chat is available only to paired devices; approvals remain locked until durable immutable approval records are implemented.
 - Local device pairing for the mobile shell: one-time codes expire after 10 minutes, are attempt-limited and single-use, and create revocable HttpOnly device sessions. Private `/api/*` routes reject unapproved devices.
 
 ## Important files
@@ -154,7 +154,15 @@ Never read, print, copy into documentation, or commit the user's real `.env` val
 - Device authentication is now implemented and live. The unauthenticated app shows a pairing gate, protected health/API requests return HTTP 401, and successful pairing creates a revocable HttpOnly `SameSite=Strict` device cookie. Only hashes of pairing codes and session tokens are stored in the ignored `web/.mona/` directory.
 - Authentication validation passes: one-time-code invalidation, hashed secret storage, API lockout, pairing, authenticated status, logout, built assets, ESLint, and the production build.
 - The user successfully paired the current browser. The authenticated home screen now retrieves and displays the complete server-authorized paired-device list, marks the current browser as `This device`, and exposes no token hashes or session secrets.
-- **Next action:** Have the user refresh and confirm the paired-device list, then add an encrypted private phone link without exposing FastAPI publicly.
+- Tailscale was selected for the encrypted private phone link. Mona and FastAPI remain bound to localhost; Tailscale Serve will later proxy only the mobile web port over HTTPS inside the user's private tailnet. Tailscale Funnel/public exposure must not be enabled.
+- Tailscale is installed on the Windows PC, its service is running, and the PC reports online in the tailnet.
+- The phone is signed in to the same tailnet and reports online.
+- Tailscale Serve HTTPS is enabled in background mode and proxies the tailnet-only HTTPS endpoint to `http://127.0.0.1:3000`. Funnel remains disabled. FastAPI remains private on `127.0.0.1:8000`.
+- The phone successfully opened Mona through the tailnet-only HTTPS address and completed device pairing.
+- Both `Santhosh_Laptop` and `Santhosh_Phone` are now paired, and the authenticated device list shows both approved browsers.
+- The Chat tab is implemented for paired devices. `/api/mona-chat` validates bounded messages and history, then forwards them server-side to the localhost FastAPI `/chat` endpoint. FastAPI remains unexposed, and the Approvals tab remains disabled.
+- Verification: the focused lint check passed, the production build passed, and all five web authentication/rendering/chat-route tests passed.
+- **Next action:** Restart the local mobile web process to load the new build, then send the first read-only Outlook request from the Chat tab. After that, implement immutable pending approval records before enabling mobile email approvals.
 
 ## Development commands
 
@@ -176,6 +184,7 @@ Interactive API documentation is available locally at `http://127.0.0.1:8000/doc
 - Do not enable `AUTO_APPROVE_TOOLS=true` unless the user explicitly accepts the risk in a trusted local environment.
 - Keep Mona bound to localhost until API authentication and durable approval storage are implemented.
 - Do not deploy the mobile app publicly or expose the FastAPI port to a network before app authentication is enforced.
+- Use Tailscale Serve, never Funnel, for Mona's private phone link. Keep FastAPI and the Mona local web server listening only on localhost.
 - Keep `web/.mona/` ignored. It contains device-authentication state and must never be committed or copied into documentation.
 - Treat mailbox content and Graph payloads as untrusted input.
 - Before pushing, check `git status`, inspect the diff, and scan tracked files for accidental secrets.

@@ -14,6 +14,8 @@
 - **DeepSeek API** — Interprets the user's request and decides which approved Mona tool to use.
 - **Mona mobile PWA** — A phone-friendly private interface for chat and approvals; the first local shell is implemented, but remote access is not enabled yet.
 - **Device pairing** — A short, one-time code approves a browser and gives it a private revocable session without putting secrets in browser storage.
+- **Tailscale** — Creates an encrypted private network between Mona's computer and approved phone; it does not make Mona public.
+- **Tailscale Serve** — Gives the private tailnet an HTTPS address that securely forwards to Mona's localhost web port.
 
 ## Connection map
 
@@ -75,7 +77,36 @@ flowchart LR
 - [x] Added the device-pairing gate. Unapproved browsers cannot access Mona's private API routes; pairing codes expire after 10 minutes and work once.
 - [x] Kept device records local and Git-ignored, storing only hashes of pairing codes and session tokens.
 - [x] Paired the first browser and added an authenticated mobile-UI list of all paired devices, with the current browser clearly marked.
+- [x] Installed Tailscale on the Windows PC and verified the PC is online in its private tailnet.
+- [x] Connected the phone to the same tailnet.
+- [x] Enabled persistent Tailscale Serve HTTPS for Mona's localhost web port while leaving Funnel disabled.
+- [x] Opened Mona through private HTTPS on the phone and paired the phone browser.
+- [x] Paired both `Santhosh_Laptop` and `Santhosh_Phone`; the authenticated device list now shows two approved devices.
+- [x] Added a secure Chat tab for paired devices. Its same-origin server route validates bounded input and forwards requests to Mona's localhost `/chat` endpoint without exposing FastAPI directly.
+
+## Manual private-link startup
+
+```powershell
+# Terminal 1: start Mona's backend; keep this window open.
+Set-Location "C:\Users\kummaris.S-TKP-LTP-0343\OneDrive\M4rinqu3ll_GitHub_Repos\Mona_AI_Assistant"
+.\.venv\Scripts\python.exe -m uvicorn agent.app:app --host 127.0.0.1 --port 8000
+
+# Terminal 2: start Mona's mobile web app; keep this window open.
+Set-Location "C:\Users\kummaris.S-TKP-LTP-0343\OneDrive\M4rinqu3ll_GitHub_Repos\Mona_AI_Assistant\web"
+& "$env:USERPROFILE\.cache\codex-runtimes\codex-primary-runtime\dependencies\node\bin\node.exe" .\scripts\start-local.mjs
+
+# Administrator terminal: enable the persistent private HTTPS proxy.
+& "C:\Program Files\Tailscale\tailscale.exe" serve --bg 3000
+
+# Display the private URL and confirm its proxy target.
+& "C:\Program Files\Tailscale\tailscale.exe" serve status
+
+# Optional: disable only Mona's private proxy.
+& "C:\Program Files\Tailscale\tailscale.exe" serve --https=443 off
+```
+
+`serve --bg` persists across Tailscale restarts. Normally, later daily starts require only the backend and mobile-web commands.
 
 ## Current next step
 
-Refresh Mona and confirm the **Paired devices** card lists the approved browser with a **This device** marker. After this check, add an encrypted private phone link; keep FastAPI on localhost.
+Restart the local mobile web process so it loads the new build, then use the Chat tab from a paired device for the first read-only Outlook request. Add immutable approval records before enabling approval-controlled email sending in the mobile UI.
