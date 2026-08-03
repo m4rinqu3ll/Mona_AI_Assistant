@@ -13,7 +13,8 @@ import {
 
 const moduleDirectory = fileURLToPath(new URL(".", import.meta.url));
 const defaultRoot = resolve(moduleDirectory, "..");
-const sessionCookieName = "mona_device";
+const sessionCookieName = "momo_device";
+const legacySessionCookieName = "mona_device";
 const sessionLifetimeSeconds = 90 * 24 * 60 * 60;
 
 const contentTypes = {
@@ -104,8 +105,16 @@ function parseCookies(cookieHeader) {
   return cookies;
 }
 
+function sessionCredential(request) {
+  const cookies = parseCookies(request.headers.get("cookie"));
+  const current = cookies.get(sessionCookieName);
+  if (current) return { token: current, legacy: false };
+  const legacy = cookies.get(legacySessionCookieName);
+  return { token: legacy ?? "", legacy: Boolean(legacy) };
+}
+
 function sessionToken(request) {
-  return parseCookies(request.headers.get("cookie")).get(sessionCookieName) ?? "";
+  return sessionCredential(request).token;
 }
 
 function isSecureRequest(request) {
@@ -113,18 +122,26 @@ function isSecureRequest(request) {
   return new URL(request.url).protocol === "https:" || forwardedProtocol === "https";
 }
 
-function sessionCookie(request, value, maximumAge = sessionLifetimeSeconds) {
+function namedSessionCookie(request, name, value, maximumAge = sessionLifetimeSeconds) {
   const secure = isSecureRequest(request) ? "; Secure" : "";
-  return `${sessionCookieName}=${value}; Path=/; HttpOnly; SameSite=Strict; Max-Age=${maximumAge}${secure}`;
+  return `${name}=${value}; Path=/; HttpOnly; SameSite=Strict; Max-Age=${maximumAge}${secure}`;
 }
 
-function jsonResponse(payload, { status = 200, cookie } = {}) {
+function sessionCookie(request, value, maximumAge = sessionLifetimeSeconds) {
+  return namedSessionCookie(request, sessionCookieName, value, maximumAge);
+}
+
+function legacySessionCookie(request, value, maximumAge = sessionLifetimeSeconds) {
+  return namedSessionCookie(request, legacySessionCookieName, value, maximumAge);
+}
+
+function jsonResponse(payload, { status = 200, cookies = [] } = {}) {
   const headers = new Headers({
     "cache-control": "no-store",
     "content-type": "application/json; charset=utf-8",
     "x-content-type-options": "nosniff",
   });
-  if (cookie) headers.append("set-cookie", cookie);
+  for (const cookie of cookies) headers.append("set-cookie", cookie);
   return new Response(JSON.stringify(payload), { status, headers });
 }
 
@@ -132,8 +149,16 @@ async function handleDeviceAuth(request, statePath) {
   const url = new URL(request.url);
 
   if (url.pathname === "/api/device-auth/status" && request.method === "GET") {
-    const token = sessionToken(request);
-    const session = await verifySession(statePath, token);
+    const credential = sessionCredential(request);
+    const session = await verifySession(statePath, credential.token);
+    const cookies = session.authenticated && credential.legacy
+      ? [
+          sessionCookie(request, credential.token),
+          legacySessionCookie(request, "", 0),
+        ]
+      : !session.authenticated && credential.token
+        ? [sessionCookie(request, "", 0), legacySessionCookie(request, "", 0)]
+        : [];
     return jsonResponse(
       session.authenticated
         ? {
@@ -142,9 +167,7 @@ async function handleDeviceAuth(request, statePath) {
             device_name: session.deviceName,
           }
         : { authenticated: false },
-      session.authenticated || !token
-        ? undefined
-        : { cookie: sessionCookie(request, "", 0) },
+      { cookies },
     );
   }
 
@@ -177,7 +200,12 @@ async function handleDeviceAuth(request, statePath) {
         device_id: result.deviceId,
         device_name: result.deviceName,
       },
-      { cookie: sessionCookie(request, result.sessionToken) },
+      {
+        cookies: [
+          sessionCookie(request, result.sessionToken),
+          legacySessionCookie(request, "", 0),
+        ],
+      },
     );
   }
 
@@ -202,7 +230,9 @@ async function handleDeviceAuth(request, statePath) {
     await revokeSession(statePath, sessionToken(request));
     return jsonResponse(
       { authenticated: false },
-      { cookie: sessionCookie(request, "", 0) },
+      {
+        cookies: [sessionCookie(request, "", 0), legacySessionCookie(request, "", 0)],
+      },
     );
   }
 
@@ -248,7 +278,7 @@ function createAssetReader(clientDirectory) {
   };
 }
 
-export async function createMonaServer({
+export async function createMoMoServer({
   root = defaultRoot,
   hostname = "127.0.0.1",
   authStatePath = defaultAuthStatePath(root),
@@ -294,7 +324,7 @@ export async function createMonaServer({
       }
       await sendWebResponse(response, request, result);
     } catch (error) {
-      console.error("[Mona] Local web request failed:", error);
+      console.error("[MoMo] Local web request failed:", error);
       if (!result.headersSent) result.writeHead(500);
       result.end("Internal Server Error");
     }
@@ -307,8 +337,8 @@ const launchedDirectly = process.argv[1]
 
 if (launchedDirectly) {
   const { hostname, port } = parseArguments(process.argv.slice(2));
-  const server = await createMonaServer({ hostname });
+  const server = await createMoMoServer({ hostname });
   server.listen(port, hostname, () => {
-    console.log(`[Mona] Mobile app running at http://${hostname}:${port}`);
+    console.log(`[MoMo] Mobile app running at http://${hostname}:${port}`);
   });
 }

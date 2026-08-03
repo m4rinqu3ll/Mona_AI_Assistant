@@ -1,4 +1,4 @@
-# First email chat with Mona using DeepSeek
+# First email chat with MoMo using DeepSeek
 
 This walkthrough keeps secrets local, authenticates your own Outlook mailbox through Microsoft,
 checks DeepSeek separately, and makes the first mailbox request read-only.
@@ -8,7 +8,7 @@ checks DeepSeek separately, and makes the first mailbox request read-only.
 Open PowerShell:
 
 ```powershell
-cd "C:\Users\kummaris.S-TKP-LTP-0343\OneDrive\M4rinqu3ll_GitHub_Repos\Mona_AI_Assistant"
+cd "C:\Users\kummaris.S-TKP-LTP-0343\OneDrive\M4rinqu3ll_GitHub_Repos\MoMo_AI_Assistant"
 py -3.12 -m pip install --user uv
 uv sync --extra dev
 Copy-Item .env.example .env
@@ -39,11 +39,11 @@ DEEPSEEK_THINKING=false
 `deepseek-v4-pro` later if your evaluations justify the additional model capability. Thinking is
 disabled for the first mailbox test to keep the interaction fast and straightforward.
 
-## 3. Register Mona with Microsoft
+## 3. Register MoMo with Microsoft
 
 In the Microsoft Entra admin center:
 
-1. Open **App registrations** and create a registration named `Mona AI Assistant`.
+1. Open **App registrations** and create a registration named `MoMo AI Assistant`.
 2. For an Outlook.com mailbox, allow organizational directories and personal Microsoft accounts.
    For a company-only deployment, select the tenant policy your administrator requires.
 3. Copy the **Application (client) ID**. A client secret is not needed and must not be created for
@@ -64,7 +64,7 @@ MS_SCOPES=User.Read,Mail.ReadWrite,Mail.Send
 
 Use your tenant ID instead of `common` if your administrator requires a single-tenant app.
 
-## 4. Start Mona
+## 4. Start MoMo
 
 ```powershell
 uv run uvicorn agent.app:app --reload
@@ -81,11 +81,11 @@ Call `GET /health`. Before mailbox login it should show:
 
 1. In Swagger, open `POST /auth/device-code` and select **Execute**.
 2. Copy the returned `flow_id`, `user_code`, and `verification_uri`.
-3. Open the verification URI, enter the code, and sign in to the mailbox Mona should use.
+3. Open the verification URI, enter the code, and sign in to the mailbox MoMo should use.
 4. Open `POST /auth/device-code/{flow_id}/complete`, paste the `flow_id`, and execute it.
 5. Confirm the response contains `"authenticated": true`.
 
-Mona never handles your Microsoft password. MSAL stores its refresh-token cache in the operating
+MoMo never handles your Microsoft password. MSAL stores its refresh-token cache in the operating
 system credential vault.
 
 ## 6. Test DeepSeek without reading email
@@ -94,12 +94,12 @@ Call `POST /chat` with:
 
 ```json
 {
-  "message": "Reply exactly: Mona is online. Do not use any tools.",
+  "message": "Reply exactly: MoMo is online. Do not use any tools.",
   "history": []
 }
 ```
 
-Expected message: `Mona is online.`
+Expected message: `MoMo is online.`
 
 ## 7. Run the first read-only email chat
 
@@ -112,13 +112,13 @@ Call `POST /chat` with:
 }
 ```
 
-Mona should ask the `email` tool for only three unread messages and return a summary. This request
+MoMo should ask the `email` tool for only three unread messages and return a summary. This request
 does not require approval because it does not change the mailbox.
 
 ## 8. Mutating email actions
 
 Sending, replying, and marking mail read are approval-gated. Keep `AUTO_APPROVE_TOOLS=false`.
-When Mona proposes a mutating action, inspect the returned `tool_results` parameters. Execute the
+When MoMo proposes a mutating action, inspect the returned `tool_results` parameters. Execute the
 reviewed call through `POST /tool` only after setting `approval_status` to `APPROVED`.
 
 Never enable automatic approval until the local read-only flow is working reliably.

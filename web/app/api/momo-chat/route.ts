@@ -1,4 +1,4 @@
-const DEFAULT_MONA_API_URL = "http://127.0.0.1:8000";
+const DEFAULT_MOMO_API_URL = "http://127.0.0.1:8000";
 const MAX_MESSAGE_LENGTH = 20_000;
 const MAX_HISTORY_MESSAGES = 30;
 
@@ -38,7 +38,7 @@ export async function POST(request: Request) {
     return Response.json({ detail: "Message or chat history is invalid." }, { status: 400 });
   }
 
-  const apiUrl = process.env.MONA_API_URL ?? DEFAULT_MONA_API_URL;
+  const apiUrl = process.env.MOMO_API_URL ?? DEFAULT_MOMO_API_URL;
   try {
     const response = await fetch(`${apiUrl}/chat`, {
       method: "POST",
@@ -50,7 +50,7 @@ export async function POST(request: Request) {
 
     if (!response.ok) {
       return Response.json(
-        { detail: "Mona could not process that request." },
+        { detail: "MoMo could not process that request." },
         { status: response.status >= 500 ? 503 : response.status },
       );
     }
@@ -61,7 +61,7 @@ export async function POST(request: Request) {
       tool_results?: unknown;
     };
     if (typeof result.message !== "string") {
-      return Response.json({ detail: "Mona returned an invalid response." }, { status: 502 });
+      return Response.json({ detail: "MoMo returned an invalid response." }, { status: 502 });
     }
 
     return Response.json({
@@ -71,7 +71,7 @@ export async function POST(request: Request) {
     });
   } catch {
     return Response.json(
-      { detail: "Mona's local service is unavailable." },
+      { detail: "MoMo's local service is unavailable." },
       { status: 503 },
     );
   }

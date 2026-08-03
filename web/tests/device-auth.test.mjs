@@ -12,7 +12,7 @@ import {
 } from "../scripts/device-auth.mjs";
 
 test("pairing codes are one-time and device tokens are stored only as hashes", async (context) => {
-  const temporaryDirectory = await mkdtemp(join(tmpdir(), "mona-device-auth-"));
+  const temporaryDirectory = await mkdtemp(join(tmpdir(), "momo-device-auth-"));
   context.after(() => rm(temporaryDirectory, { recursive: true, force: true }));
   const statePath = join(temporaryDirectory, "device-auth.json");
 

@@ -1,7 +1,7 @@
-const DEFAULT_MONA_API_URL = "http://127.0.0.1:8000";
+const DEFAULT_MOMO_API_URL = "http://127.0.0.1:8000";
 
 export async function GET() {
-  const apiUrl = process.env.MONA_API_URL ?? DEFAULT_MONA_API_URL;
+  const apiUrl = process.env.MOMO_API_URL ?? DEFAULT_MOMO_API_URL;
 
   try {
     const response = await fetch(`${apiUrl}/health`, {

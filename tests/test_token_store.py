@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import base64
+
 import pytest
 
 from agent.auth.token_store import KeyringTokenStore
@@ -24,7 +26,7 @@ class FakeKeyring:
 
 def test_large_cache_is_chunked_and_round_trips() -> None:
     backend = FakeKeyring()
-    store = KeyringTokenStore("mona-test", keyring_backend=backend)
+    store = KeyringTokenStore("momo-test", keyring_backend=backend)
     serialized_cache = '{"AccessToken":"' + ("token-data-" * 2_000) + '"}'
 
     store.save(serialized_cache)
@@ -36,20 +38,20 @@ def test_large_cache_is_chunked_and_round_trips() -> None:
 
 def test_load_supports_legacy_single_entry() -> None:
     backend = FakeKeyring()
-    backend.values[("mona-test", "msal-token-cache")] = "legacy-cache"
-    store = KeyringTokenStore("mona-test", keyring_backend=backend)
+    backend.values[("momo-test", "msal-token-cache")] = "legacy-cache"
+    store = KeyringTokenStore("momo-test", keyring_backend=backend)
 
     assert store.load() == "legacy-cache"
 
 
 def test_replacing_cache_removes_previous_generation() -> None:
     backend = FakeKeyring()
-    store = KeyringTokenStore("mona-test", keyring_backend=backend)
+    store = KeyringTokenStore("momo-test", keyring_backend=backend)
     store.save("first-cache" * 1_000)
     first_generation_accounts = {
         username
         for service, username in backend.values
-        if service == "mona-test" and ":chunk:" in username
+        if service == "momo-test" and ":chunk:" in username
     }
 
     store.save("second-cache" * 1_000)
@@ -57,7 +59,7 @@ def test_replacing_cache_removes_previous_generation() -> None:
     current_generation_accounts = {
         username
         for service, username in backend.values
-        if service == "mona-test" and ":chunk:" in username
+        if service == "momo-test" and ":chunk:" in username
     }
     assert store.load() == "second-cache" * 1_000
     assert first_generation_accounts.isdisjoint(current_generation_accounts)
@@ -65,10 +67,23 @@ def test_replacing_cache_removes_previous_generation() -> None:
 
 def test_incomplete_cache_is_rejected() -> None:
     backend = FakeKeyring()
-    store = KeyringTokenStore("mona-test", keyring_backend=backend)
+    store = KeyringTokenStore("momo-test", keyring_backend=backend)
     store.save("cache-data" * 1_000)
     chunk_key = next(key for key in backend.values if ":chunk:" in key[1])
     del backend.values[chunk_key]
 
     with pytest.raises(RuntimeError, match="incomplete"):
         store.load()
+
+
+def test_load_supports_legacy_brand_manifest() -> None:
+    backend = FakeKeyring()
+    generation = "a" * 32
+    encoded = base64.b64encode(b"legacy-cache").decode("ascii")
+    backend.values[("momo-test", "msal-token-cache")] = (
+        f"mona-keyring-chunks-v1:{generation}:1"
+    )
+    backend.values[("momo-test", f"msal-token-cache:chunk:{generation}:00000")] = encoded
+    store = KeyringTokenStore("momo-test", keyring_backend=backend)
+
+    assert store.load() == "legacy-cache"

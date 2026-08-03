@@ -32,7 +32,7 @@ type ChatMessage = {
 
 async function fetchBackendState(signal?: AbortSignal): Promise<BackendState> {
   try {
-    const response = await fetch("/api/mona-health", {
+    const response = await fetch("/api/momo-health", {
       cache: "no-store",
       signal,
     });
@@ -90,7 +90,7 @@ export default function Home() {
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([
     {
       role: "assistant",
-      content: "Hi, I'm Mona. Ask me a read-only question about your Outlook inbox.",
+      content: "Hi, I'm MoMo. Ask me a read-only question about your Outlook inbox.",
     },
   ]);
   const [chatInput, setChatInput] = useState("");
@@ -177,7 +177,7 @@ export default function Home() {
       setPairedDevices(devices);
       setBackend(backendState);
     } catch {
-      setPairingError("Mona could not verify this device. Please try again.");
+      setPairingError("MoMo could not verify this device. Please try again.");
     } finally {
       setPairing(false);
     }
@@ -202,14 +202,14 @@ export default function Home() {
     setChatPending(true);
 
     try {
-      const response = await fetch("/api/mona-chat", {
+      const response = await fetch("/api/momo-chat", {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ message, history }),
       });
       const result = (await response.json()) as { message?: string; detail?: string };
       if (!response.ok || !result.message) {
-        setChatError(result.detail ?? "Mona could not answer that request.");
+        setChatError(result.detail ?? "MoMo could not answer that request.");
         return;
       }
       setChatMessages((current) => [
@@ -217,7 +217,7 @@ export default function Home() {
         { role: "assistant", content: result.message ?? "" },
       ]);
     } catch {
-      setChatError("Mona's local service is unavailable.");
+      setChatError("MoMo's local service is unavailable.");
     } finally {
       setChatPending(false);
     }
@@ -226,8 +226,8 @@ export default function Home() {
   if (device.status !== "authenticated") {
     return (
       <main className="app-shell">
-        <section className="phone-surface auth-surface" aria-label="Mona device pairing">
-          <MonaHeader state={device.status === "checking" ? "Checking" : "Locked"} />
+        <section className="phone-surface auth-surface" aria-label="MoMo device pairing">
+          <MoMoHeader state={device.status === "checking" ? "Checking" : "Locked"} />
           <section className="pairing-card">
             <div className="pairing-lock" aria-hidden="true">
               M
@@ -236,8 +236,8 @@ export default function Home() {
             <h2>{device.status === "checking" ? "Checking this device" : "Pair this device"}</h2>
             <p className="hero-copy">
               {device.status === "checking"
-                ? "Mona is checking whether this browser is approved."
-                : "Generate a one-time code on Mona's computer, then enter it below."}
+                ? "MoMo is checking whether this browser is approved."
+                : "Generate a one-time code on MoMo's computer, then enter it below."}
             </p>
 
             {device.status === "unpaired" ? (
@@ -282,15 +282,15 @@ export default function Home() {
   const isOnline = backend.status === "online";
   const statusLabel =
     backend.status === "checking"
-      ? "Checking Mona"
+      ? "Checking MoMo"
       : isOnline
-        ? "Mona is online"
-        : "Mona is offline";
+        ? "MoMo is online"
+        : "MoMo is offline";
 
   return (
     <main className="app-shell">
-      <section className="phone-surface" aria-label="Mona mobile home">
-        <MonaHeader state="Approved" />
+      <section className="phone-surface" aria-label="MoMo mobile home">
+        <MoMoHeader state="Approved" />
 
         {activeView === "home" ? <>
         <section className="hero-card">
@@ -303,8 +303,8 @@ export default function Home() {
             {isOnline
               ? "The local reasoning and Outlook services are ready."
               : backend.status === "checking"
-                ? "Connecting securely to your local Mona service..."
-                : "Start the Mona backend on your computer, then check again."}
+                ? "Connecting securely to your local MoMo service..."
+                : "Start the MoMo backend on your computer, then check again."}
           </p>
           <button
             className="status-button"
@@ -327,7 +327,7 @@ export default function Home() {
 
           <div className="readiness-list">
             <StatusRow
-              label="Mona backend"
+              label="MoMo backend"
               detail={isOnline ? `Version ${backend.version}` : "Local service"}
               ready={isOnline}
             />
@@ -379,7 +379,7 @@ export default function Home() {
           <div>
             <p className="eyebrow">Private connection ready</p>
             <h2>Private phone link</h2>
-            <p>Your paired devices can reach Mona privately through Tailscale Serve.</p>
+            <p>Your paired devices can reach MoMo privately through Tailscale Serve.</p>
           </div>
         </section>
 
@@ -388,34 +388,34 @@ export default function Home() {
           <div>
             <p className="eyebrow">Ready to test</p>
             <h2>Secure chat</h2>
-            <p>Open Chat and ask Mona a read-only question about your Outlook inbox.</p>
+            <p>Open Chat and ask MoMo a read-only question about your Outlook inbox.</p>
           </div>
         </section>
         </> : (
           <section className="chat-view" aria-labelledby="chat-title">
             <div className="chat-heading">
               <p className="eyebrow">Private conversation</p>
-              <h2 id="chat-title">Chat with Mona</h2>
+              <h2 id="chat-title">Chat with MoMo</h2>
               <p>Read-only Outlook requests are safe to test first.</p>
             </div>
 
             <div className="message-list" aria-live="polite">
               {chatMessages.map((message, index) => (
                 <article className={`message message-${message.role}`} key={`${message.role}-${index}`}>
-                  <span>{message.role === "assistant" ? "Mona" : "You"}</span>
+                  <span>{message.role === "assistant" ? "MoMo" : "You"}</span>
                   <p>{message.content}</p>
                 </article>
               ))}
               {chatPending ? (
                 <article className="message message-assistant message-thinking">
-                  <span>Mona</span>
+                  <span>MoMo</span>
                   <p>Thinking...</p>
                 </article>
               ) : null}
             </div>
 
             <form className="chat-form" onSubmit={submitChat}>
-              <label className="sr-only" htmlFor="chat-message">Message Mona</label>
+              <label className="sr-only" htmlFor="chat-message">Message MoMo</label>
               <textarea
                 id="chat-message"
                 rows={2}
@@ -470,14 +470,14 @@ function formatPairedDate(timestamp: number) {
   return paired.toLocaleDateString(undefined, { month: "short", day: "numeric" });
 }
 
-function MonaHeader({ state }: { state: "Checking" | "Locked" | "Approved" }) {
+function MoMoHeader({ state }: { state: "Checking" | "Locked" | "Approved" }) {
   return (
     <header className="topbar">
       <div className="brand-lockup">
         <span className="brand-mark" aria-hidden="true">M</span>
         <div>
           <p className="eyebrow">Personal assistant</p>
-          <h1>Mona</h1>
+          <h1>MoMo</h1>
         </div>
       </div>
       <span className={`private-pill private-${state.toLowerCase()}`}>

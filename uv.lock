@@ -569,7 +569,7 @@ wheels = [
 ]
 
 [[package]]
-name = "mona-ai-assistant"
+name = "momo-ai-assistant"
 version = "0.1.0"
 source = { editable = "." }
 dependencies = [

@@ -4,7 +4,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import test from "node:test";
 import { createPairing } from "../scripts/device-auth.mjs";
-import { createMonaServer } from "../scripts/start-local.mjs";
+import { createMoMoServer } from "../scripts/start-local.mjs";
 
 async function render() {
   const workerUrl = new URL("../dist/server/index.js", import.meta.url);
@@ -18,25 +18,25 @@ async function render() {
   );
 }
 
-test("server-renders the Mona device gate", async () => {
+test("server-renders the MoMo device gate", async () => {
   const response = await render();
   assert.equal(response.status, 200);
   assert.match(response.headers.get("content-type") ?? "", /^text\/html\b/i);
 
   const html = await response.text();
-  assert.match(html, /<title>Mona .* Private AI Assistant<\/title>/i);
+  assert.match(html, /<title>MoMo .* Private AI Assistant<\/title>/i);
   assert.match(html, /Private device access/);
   assert.match(html, /Checking this device/);
   assert.doesNotMatch(html, /codex-preview|react-loading-skeleton|Your site is taking shape/i);
 });
 
-test("chat route validates a request before contacting Mona", async () => {
+test("chat route validates a request before contacting MoMo", async () => {
   const workerUrl = new URL("../dist/server/index.js", import.meta.url);
   workerUrl.searchParams.set("chat-test", `${process.pid}-${Date.now()}`);
   const { default: worker } = await import(workerUrl.href);
 
   const response = await worker.fetch(
-    new Request("http://localhost/api/mona-chat", {
+    new Request("http://localhost/api/momo-chat", {
       method: "POST",
       headers: { "content-type": "application/json" },
       body: JSON.stringify({}),
@@ -49,11 +49,11 @@ test("chat route validates a request before contacting Mona", async () => {
   assert.deepEqual(await response.json(), { detail: "Message or chat history is invalid." });
 });
 
-test("local launcher serves Mona's built CSS and JavaScript", async (context) => {
-  const temporaryDirectory = await mkdtemp(join(tmpdir(), "mona-web-test-"));
+test("local launcher serves MoMo's built CSS and JavaScript", async (context) => {
+  const temporaryDirectory = await mkdtemp(join(tmpdir(), "momo-web-test-"));
   context.after(() => rm(temporaryDirectory, { recursive: true, force: true }));
   const authStatePath = join(temporaryDirectory, "device-auth.json");
-  const server = await createMonaServer({ authStatePath });
+  const server = await createMoMoServer({ authStatePath });
   await new Promise((resolve, reject) => {
     server.once("error", reject);
     server.listen(0, "127.0.0.1", resolve);
@@ -79,11 +79,11 @@ test("local launcher serves Mona's built CSS and JavaScript", async (context) =>
 });
 
 test("local launcher pairs one device and protects private APIs", async (context) => {
-  const temporaryDirectory = await mkdtemp(join(tmpdir(), "mona-pair-test-"));
+  const temporaryDirectory = await mkdtemp(join(tmpdir(), "momo-pair-test-"));
   context.after(() => rm(temporaryDirectory, { recursive: true, force: true }));
   const authStatePath = join(temporaryDirectory, "device-auth.json");
   const pairing = await createPairing(authStatePath);
-  const server = await createMonaServer({ authStatePath });
+  const server = await createMoMoServer({ authStatePath });
   await new Promise((resolve, reject) => {
     server.once("error", reject);
     server.listen(0, "127.0.0.1", resolve);
@@ -94,7 +94,7 @@ test("local launcher pairs one device and protects private APIs", async (context
   assert(address && typeof address === "object");
   const origin = `http://127.0.0.1:${address.port}`;
 
-  const blockedHealth = await fetch(`${origin}/api/mona-health`);
+  const blockedHealth = await fetch(`${origin}/api/momo-health`);
   assert.equal(blockedHealth.status, 401);
 
   const paired = await fetch(`${origin}/api/device-auth/pair`, {
@@ -104,7 +104,21 @@ test("local launcher pairs one device and protects private APIs", async (context
   });
   assert.equal(paired.status, 200);
   const cookie = paired.headers.getSetCookie()[0].split(";", 1)[0];
-  assert.match(cookie, /^mona_device=/);
+  assert.match(cookie, /^momo_device=/);
+
+  const legacyCookie = cookie.replace(/^momo_device=/, "mona_device=");
+  const migratedStatus = await fetch(`${origin}/api/device-auth/status`, {
+    headers: { cookie: legacyCookie },
+  });
+  assert.equal((await migratedStatus.json()).authenticated, true);
+  const migrationCookies = migratedStatus.headers.getSetCookie();
+  assert.equal(migrationCookies.some((value) => value.startsWith("momo_device=")), true);
+  assert.equal(
+    migrationCookies.some(
+      (value) => value.startsWith("mona_device=") && value.includes("Max-Age=0"),
+    ),
+    true,
+  );
 
   const status = await fetch(`${origin}/api/device-auth/status`, {
     headers: { cookie },

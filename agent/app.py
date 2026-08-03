@@ -38,7 +38,7 @@ def create_app(
         await container.close()
 
     app = FastAPI(
-        title="Mona AI Assistant",
+        title="MoMo AI Assistant",
         version=__version__,
         lifespan=lifespan,
     )

@@ -10,7 +10,7 @@ const maximumDevices = 10;
 let mutationQueue = Promise.resolve();
 
 export function defaultAuthStatePath(root) {
-  return process.env.MONA_AUTH_STATE_PATH ?? resolve(root, ".mona", "device-auth.json");
+  return process.env.MOMO_AUTH_STATE_PATH ?? resolve(root, ".momo", "device-auth.json");
 }
 
 function emptyState() {
@@ -21,7 +21,7 @@ async function readState(statePath) {
   try {
     const state = JSON.parse(await readFile(statePath, "utf8"));
     if (state.version !== 1 || !Array.isArray(state.pendingPairings) || !Array.isArray(state.devices)) {
-      throw new Error("Unsupported Mona device-auth state.");
+      throw new Error("Unsupported MoMo device-auth state.");
     }
     return state;
   } catch (error) {

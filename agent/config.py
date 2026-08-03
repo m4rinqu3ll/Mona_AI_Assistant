@@ -26,7 +26,7 @@ class Settings(BaseSettings):
     ms_scopes: Annotated[list[str], NoDecode] = Field(
         default_factory=lambda: ["User.Read", "Mail.ReadWrite", "Mail.Send"]
     )
-    ms_token_keyring_service: str = "mona-ai-assistant"
+    ms_token_keyring_service: str = "momo-ai-assistant"
 
     graph_base_url: str = "https://graph.microsoft.com/v1.0"
     graph_timeout_seconds: float = Field(default=20.0, gt=0, le=120)

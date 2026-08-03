@@ -2,9 +2,9 @@ import type { Metadata, Viewport } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Mona — Private AI Assistant",
-  description: "A private mobile companion for conversations and approvals with Mona.",
-  applicationName: "Mona",
+  title: "MoMo — Private AI Assistant",
+  description: "A private mobile companion for conversations and approvals with MoMo.",
+  applicationName: "MoMo",
 };
 
 export const viewport: Viewport = {

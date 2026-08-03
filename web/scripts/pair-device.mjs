@@ -9,10 +9,10 @@ const pairing = await createPairing(statePath);
 const expiresAt = new Date(pairing.expiresAt).toLocaleTimeString();
 
 console.log("");
-console.log("Mona device pairing code");
+console.log("MoMo device pairing code");
 console.log("");
 console.log(`  ${pairing.code}`);
 console.log("");
-console.log(`Enter this code only in your Mona app. It expires at ${expiresAt}.`);
+console.log(`Enter this code only in your MoMo app. It expires at ${expiresAt}.`);
 console.log("Generating another code immediately invalidates this one.");
 

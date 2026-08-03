@@ -3,9 +3,9 @@ requires = ["setuptools>=75"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "mona-ai-assistant"
+name = "momo-ai-assistant"
 version = "0.1.0"
-description = "Mona - an extensible, tool-based personal AI assistant"
+description = "MoMo - an extensible, tool-based personal AI assistant"
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [

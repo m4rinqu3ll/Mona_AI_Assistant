@@ -1,6 +1,6 @@
-# Mona AI Assistant
+# MoMo AI Assistant
 
-A production-oriented Phase 1 foundation for Mona, an extensible personal AI assistant. Outlook email is the first
+A production-oriented Phase 1 foundation for MoMo, an extensible personal AI assistant. Outlook email is the first
 connector, not the architecture: the LLM reasons, the dispatcher authorizes and routes, tools own
 business behavior, and clients own external API details.
 
@@ -88,7 +88,7 @@ Open `http://127.0.0.1:8000/docs`. Start authentication with
 `POST /auth/device-code/{flow_id}/complete`.
 
 For a complete first-run walkthrough, see
-[First email chat with Mona](docs/first-email-chat.md).
+[First email chat with MoMo](docs/first-email-chat.md).
 
 ## API examples
 

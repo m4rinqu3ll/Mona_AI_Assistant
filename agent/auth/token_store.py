@@ -36,7 +36,8 @@ class KeyringTokenStore(TokenStore):
     small manifest is written last, making a new generation visible atomically.
     """
 
-    _MANIFEST_PREFIX = "mona-keyring-chunks-v1:"
+    _MANIFEST_PREFIX = "momo-keyring-chunks-v1:"
+    _LEGACY_MANIFEST_PREFIX = "mona-keyring-chunks-v1:"
     _CHUNK_SIZE = 1_000
     _MAX_CHUNKS = 10_000
 
@@ -117,10 +118,18 @@ class KeyringTokenStore(TokenStore):
                 self._delete_generation(previous_generation, previous_chunk_count)
 
     def _parse_manifest(self, stored: str) -> tuple[str, int] | None:
-        if not stored.startswith(self._MANIFEST_PREFIX):
+        prefix = next(
+            (
+                candidate
+                for candidate in (self._MANIFEST_PREFIX, self._LEGACY_MANIFEST_PREFIX)
+                if stored.startswith(candidate)
+            ),
+            None,
+        )
+        if prefix is None:
             return None
 
-        payload = stored.removeprefix(self._MANIFEST_PREFIX)
+        payload = stored.removeprefix(prefix)
         try:
             generation, chunk_count_text = payload.split(":", maxsplit=1)
             chunk_count = int(chunk_count_text)

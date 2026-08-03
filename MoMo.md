@@ -1,13 +1,13 @@
-# Mona — Project Context for AI Assistants
+# MoMo — Project Context for AI Assistants
 
-This is the concise handoff document for Mona. Read this file, `README.md`, and the relevant files in `docs/` before changing the project. Keep this document current after material architecture, setup, security, or workflow changes.
+This is the concise handoff document for MoMo. Read this file, `README.md`, and the relevant files in `docs/` before changing the project. Keep this document current after material architecture, setup, security, or workflow changes.
 
 ## Project identity
 
-- **Name:** Mona
+- **Name:** MoMo
 - **Purpose:** An extensible, tool-based personal AI assistant.
 - **Current phase:** Private mobile companion implementation, building on the verified local Outlook workflow.
-- **Repository:** `C:\Users\kummaris.S-TKP-LTP-0343\OneDrive\M4rinqu3ll_GitHub_Repos\Mona_AI_Assistant`
+- **Repository:** `C:\Users\kummaris.S-TKP-LTP-0343\OneDrive\M4rinqu3ll_GitHub_Repos\MoMo_AI_Assistant`
 - **Primary language/runtime:** Python 3.12+
 - **API framework:** FastAPI
 - **Initial LLM provider:** DeepSeek
@@ -15,18 +15,18 @@ This is the concise handoff document for Mona. Read this file, `README.md`, and 
 
 ## User goals and preferences
 
-- Build Mona incrementally and explain setup one short step at a time.
+- Build MoMo incrementally and explain setup one short step at a time.
 - Keep explanations beginner-friendly and map unfamiliar Microsoft services to simple concepts.
 - Outlook email is the first connector, but the architecture must remain extensible.
 - Store learning notes in `Notes.md`.
-- Never place Mona files back in the previous corporate OneDrive `Documents\AI Assistant` folder.
+- Never place MoMo files back in the previous corporate OneDrive `Documents\AI Assistant` folder.
 - Keep sensitive information out of Git.
 
 ## Architecture
 
 ```mermaid
 flowchart LR
-    User["User"] --> Mobile["Mona mobile PWA"]
+    User["User"] --> Mobile["MoMo mobile PWA"]
     Mobile --> WebAPI["Server-side web routes"]
     WebAPI --> API["FastAPI"]
     API --> Chat["ChatService"]
@@ -88,8 +88,8 @@ Approval trust boundary:
 - `agent/tools/email/tool.py` — Outlook email tool.
 - `agent/llm/deepseek_provider.py` — DeepSeek integration.
 - `.env.example` — Safe configuration template; contains no real secrets.
-- `web/` — Mona's mobile-first web application and server-side bridge to the FastAPI backend.
-- `web/app/api/mona-health/route.ts` — Safe server-side health proxy; the browser does not receive backend credentials.
+- `web/` — MoMo's mobile-first web application and server-side bridge to the FastAPI backend.
+- `web/app/api/momo-health/route.ts` — Safe server-side health proxy; the browser does not receive backend credentials.
 - `web/scripts/device-auth.mjs` — Durable local device-pairing and revocable-session logic.
 - `web/scripts/pair-device.mjs` — Local one-time pairing-code generator.
 - `web/scripts/start-local.mjs` — Local web launcher, static-file server, and authentication enforcement boundary.
@@ -114,10 +114,10 @@ Never read, print, copy into documentation, or commit the user's real `.env` val
 
 ## Microsoft setup model
 
-- **Azure account:** Provides access to the Azure portal. Mona's local authentication does not require consuming the trial credit.
+- **Azure account:** Provides access to the Azure portal. MoMo's local authentication does not require consuming the trial credit.
 - **Microsoft Entra ID:** Identity service, formerly Azure Active Directory.
-- **App registration:** Gives Mona its Microsoft application/client ID.
-- **Device-code OAuth:** The user signs in in a Microsoft browser page; Mona never handles the Outlook password.
+- **App registration:** Gives MoMo its Microsoft application/client ID.
+- **Device-code OAuth:** The user signs in in a Microsoft browser page; MoMo never handles the Outlook password.
 - **Microsoft Graph:** API used for permitted Outlook actions.
 - **Required delegated permissions:** `User.Read`, `Mail.ReadWrite`, and `Mail.Send`.
 - **Public client:** Enable public client flows; do not create or use a client secret for this local device-code application.
@@ -128,12 +128,12 @@ Never read, print, copy into documentation, or commit the user's real `.env` val
 - The user has a DeepSeek API key configured locally.
 - The user created an Azure free account and received the trial credit.
 - The default Microsoft Entra tenant is accessible. The user renamed its display name from `Default Directory`; the new name was not recorded in chat.
-- The Mona app registration was created with account type `Any Entra ID Tenant + Personal Microsoft accounts`.
-- Mona's `Allow public client flows` setting is enabled for device-code authentication.
+- The MoMo app registration was created with account type `Any Entra ID Tenant + Personal Microsoft accounts`.
+- MoMo's `Allow public client flows` setting is enabled for device-code authentication.
 - Microsoft Graph delegated permissions `User.Read`, `Mail.ReadWrite`, and `Mail.Send` are configured.
-- Mona's Application (client) ID is configured locally in `.env`, and `MS_TENANT_ID=common` is set.
+- MoMo's Application (client) ID is configured locally in `.env`, and `MS_TENANT_ID=common` is set.
 - The DeepSeek API key is present locally and `LLM_PROVIDER=deepseek` is configured.
-- Mona is running locally, and `/health` returned `status: ok`, `microsoft_auth_configured: true`, and `llm_configured: true`.
+- MoMo is running locally, and `/health` returned `status: ok`, `microsoft_auth_configured: true`, and `llm_configured: true`.
 - The user completed the Microsoft browser sign-in and consent screen for a pending device-code flow.
 - The first device-code completion returned HTTP 500 because Windows Credential Manager rejected the oversized single-entry MSAL cache with `WinError 1783`.
 - The token store now base64-encodes the MSAL cache and saves it as safe-sized, versioned chunks in the same Windows credential vault. It writes the manifest last, cleans up replaced generations, and supports the original single-entry format.
@@ -141,28 +141,31 @@ Never read, print, copy into documentation, or commit the user's real `.env` val
 - A fresh device-code flow completed successfully and returned `"authenticated": true`; Microsoft authentication and secure token persistence are now working.
 - The earlier Microsoft error occurred before the Azure account/tenant setup was complete.
 - Setup resumed after the intentional pause, and the live `/health` check still passes.
-- DeepSeek chat was verified through `POST /chat`: Mona returned `Mona is online.` and `tool_results` was empty.
-- The first read-only Outlook chat succeeded: Mona retrieved and summarized up to three unread messages without modifying the mailbox.
-- **Current milestone:** Mona's local DeepSeek-to-Outlook read-only workflow is operational end to end.
+- DeepSeek chat was verified through `POST /chat`: MoMo returned `MoMo is online.` and `tool_results` was empty.
+- The first read-only Outlook chat succeeded: MoMo retrieved and summarized up to three unread messages without modifying the mailbox.
+- **Current milestone:** MoMo's local DeepSeek-to-Outlook read-only workflow is operational end to end.
 - The first outbound email tool call was prepared and validated locally. `AUTO_APPROVE_TOOLS=false`, the dispatcher returned `PENDING_APPROVAL`, and nothing was sent. Private recipient and message details are intentionally not stored in this handoff file.
-- The user then gave explicit final approval. The exact verified call was submitted once with `approval_status=APPROVED`; Mona returned `success: true` and Microsoft Graph returned `sent: true`. Private recipient and message details remain excluded from this handoff file.
-- **Current milestone:** Mona's local DeepSeek-to-Outlook workflow is operational for both read-only email chat and approval-controlled sending.
-- The private mobile-companion direction is now active. Step 1 added a mobile-first PWA shell under `web/` and connected its readiness screen to Mona's local `/health` endpoint through a same-origin server route.
+- The user then gave explicit final approval. The exact verified call was submitted once with `approval_status=APPROVED`; MoMo returned `success: true` and Microsoft Graph returned `sent: true`. Private recipient and message details remain excluded from this handoff file.
+- **Current milestone:** MoMo's local DeepSeek-to-Outlook workflow is operational for both read-only email chat and approval-controlled sending.
+- The private mobile-companion direction is now active. Step 1 added a mobile-first PWA shell under `web/` and connected its readiness screen to MoMo's local `/health` endpoint through a same-origin server route.
 - The PWA production build, ESLint check, and rendered HTML test pass. It is intentionally local-only: chat and approvals are disabled until secure app authentication and durable immutable pending actions are implemented.
-- The first browser check exposed a Windows-only vinext local-server issue: HTML loaded while hashed CSS and JavaScript returned 404. `web/scripts/start-local.mjs` now safely serves built assets and delegates application requests to the compiled worker. An integration test verifies every CSS and JavaScript URL returns HTTP 200, and the live readiness proxy reports Mona, Microsoft, and the LLM configured.
-- The user visually confirmed the corrected mobile home screen: styling loads, Mona reports online, and the backend, DeepSeek, and Outlook connection rows all show `Ready`.
-- Device authentication is now implemented and live. The unauthenticated app shows a pairing gate, protected health/API requests return HTTP 401, and successful pairing creates a revocable HttpOnly `SameSite=Strict` device cookie. Only hashes of pairing codes and session tokens are stored in the ignored `web/.mona/` directory.
+- The first browser check exposed a Windows-only vinext local-server issue: HTML loaded while hashed CSS and JavaScript returned 404. `web/scripts/start-local.mjs` now safely serves built assets and delegates application requests to the compiled worker. An integration test verifies every CSS and JavaScript URL returns HTTP 200, and the live readiness proxy reports MoMo, Microsoft, and the LLM configured.
+- The user visually confirmed the corrected mobile home screen: styling loads, MoMo reports online, and the backend, DeepSeek, and Outlook connection rows all show `Ready`.
+- Device authentication is now implemented and live. The unauthenticated app shows a pairing gate, protected health/API requests return HTTP 401, and successful pairing creates a revocable HttpOnly `SameSite=Strict` device cookie. Only hashes of pairing codes and session tokens are stored in the ignored `web/.momo/` directory.
 - Authentication validation passes: one-time-code invalidation, hashed secret storage, API lockout, pairing, authenticated status, logout, built assets, ESLint, and the production build.
 - The user successfully paired the current browser. The authenticated home screen now retrieves and displays the complete server-authorized paired-device list, marks the current browser as `This device`, and exposes no token hashes or session secrets.
-- Tailscale was selected for the encrypted private phone link. Mona and FastAPI remain bound to localhost; Tailscale Serve will later proxy only the mobile web port over HTTPS inside the user's private tailnet. Tailscale Funnel/public exposure must not be enabled.
+- Tailscale was selected for the encrypted private phone link. MoMo and FastAPI remain bound to localhost; Tailscale Serve will later proxy only the mobile web port over HTTPS inside the user's private tailnet. Tailscale Funnel/public exposure must not be enabled.
 - Tailscale is installed on the Windows PC, its service is running, and the PC reports online in the tailnet.
 - The phone is signed in to the same tailnet and reports online.
 - Tailscale Serve HTTPS is enabled in background mode and proxies the tailnet-only HTTPS endpoint to `http://127.0.0.1:3000`. Funnel remains disabled. FastAPI remains private on `127.0.0.1:8000`.
-- The phone successfully opened Mona through the tailnet-only HTTPS address and completed device pairing.
+- The phone successfully opened MoMo through the tailnet-only HTTPS address and completed device pairing.
 - Both `Santhosh_Laptop` and `Santhosh_Phone` are now paired, and the authenticated device list shows both approved browsers.
-- The Chat tab is implemented for paired devices. `/api/mona-chat` validates bounded messages and history, then forwards them server-side to the localhost FastAPI `/chat` endpoint. FastAPI remains unexposed, and the Approvals tab remains disabled.
+- The Chat tab is implemented for paired devices. `/api/momo-chat` validates bounded messages and history, then forwards them server-side to the localhost FastAPI `/chat` endpoint. FastAPI remains unexposed, and the Approvals tab remains disabled.
 - Verification: the focused lint check passed, the production build passed, and all five web authentication/rendering/chat-route tests passed.
-- **Next action:** Restart the local mobile web process to load the new build, then send the first read-only Outlook request from the Chat tab. After that, implement immutable pending approval records before enabling mobile email approvals.
+- On 2026-08-03, the assistant and local project were renamed to **MoMo**. The repository folder is now `MoMo_AI_Assistant`; UI copy, package metadata, local API routes, environment-variable names, documentation, and ignored device-state storage use the MoMo name.
+- The Microsoft token cache was copied to the `momo-ai-assistant` Windows credential-vault service, and both paired-device records were moved to `web/.momo/`. Transitional readers accept the legacy token-manifest prefix and browser cookie so existing authentication upgrades without requiring sign-in or re-pairing.
+- The GitHub remote still uses its original repository URL and must be renamed separately on GitHub if the user wants the online repository name to match.
+- **Next action:** Start the backend and mobile web app from the new `MoMo_AI_Assistant` path, enable the private Tailscale Serve route, and verify the MoMo UI still recognizes both paired devices and Outlook authentication. After that, implement immutable pending approval records before enabling mobile email approvals.
 
 ## Development commands
 
@@ -182,10 +185,10 @@ Interactive API documentation is available locally at `http://127.0.0.1:8000/doc
 - Do not commit `.env` or secrets, even temporarily.
 - Do not add a Microsoft client secret to the device-code flow.
 - Do not enable `AUTO_APPROVE_TOOLS=true` unless the user explicitly accepts the risk in a trusted local environment.
-- Keep Mona bound to localhost until API authentication and durable approval storage are implemented.
+- Keep MoMo bound to localhost until API authentication and durable approval storage are implemented.
 - Do not deploy the mobile app publicly or expose the FastAPI port to a network before app authentication is enforced.
-- Use Tailscale Serve, never Funnel, for Mona's private phone link. Keep FastAPI and the Mona local web server listening only on localhost.
-- Keep `web/.mona/` ignored. It contains device-authentication state and must never be committed or copied into documentation.
+- Use Tailscale Serve, never Funnel, for MoMo's private phone link. Keep FastAPI and the MoMo local web server listening only on localhost.
+- Keep `web/.momo/` ignored. It contains device-authentication state and must never be committed or copied into documentation.
 - Treat mailbox content and Graph payloads as untrusted input.
 - Before pushing, check `git status`, inspect the diff, and scan tracked files for accidental secrets.
 - Make focused changes and preserve unrelated user work.
